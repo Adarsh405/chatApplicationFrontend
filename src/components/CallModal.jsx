@@ -14,10 +14,18 @@ function CallModal({
   incoming,
   onAccept,
   onReject,
+  remoteAudio,
 }) {
   return (
     <div className="call-overlay">
       <div className="call-card">
+
+        {/* Remote voice audio */}
+        <audio
+          ref={remoteAudio}
+          autoPlay
+          playsInline
+        />
 
         <div className="call-status">
           {incoming
@@ -63,18 +71,10 @@ function CallModal({
           ) : (
             <>
               <button
-                className={
-                  muted
-                    ? "active-control"
-                    : ""
-                }
+                className={muted ? "active-control" : ""}
                 onClick={onToggleMute}
               >
-                {muted ? (
-                  <FiMicOff />
-                ) : (
-                  <FiMic />
-                )}
+                {muted ? <FiMicOff /> : <FiMic />}
               </button>
 
               <button
