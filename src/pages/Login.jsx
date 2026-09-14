@@ -31,7 +31,7 @@ function Login() {
       setLoading(true);
 
       const response = await fetch(
-        "http://localhost:5000/api/auth/login",
+        `${import.meta.env.VITE_API_URL}/api/auth/login`,
         {
           method: "POST",
           headers: {
@@ -63,20 +63,15 @@ function Login() {
 
   return (
     <div className="auth-page">
-
       {/* Animated background */}
       <div className="auth-orb orb-one"></div>
       <div className="auth-orb orb-two"></div>
       <div className="auth-orb orb-three"></div>
 
       <div className="auth-card">
-
         {/* Logo */}
         <div className="auth-logo">
-          <div className="auth-logo-icon">
-            💬
-          </div>
-
+          <div className="auth-logo-icon">💬</div>
           <span>Pulse</span>
         </div>
 
@@ -85,17 +80,11 @@ function Login() {
           <p>Sign in to continue your conversations</p>
         </div>
 
-        {error && (
-          <div className="auth-error">
-            {error}
-          </div>
-        )}
+        {error && <div className="auth-error">{error}</div>}
 
         <form onSubmit={handleLogin}>
-
           {/* Email */}
           <div className="auth-field">
-
             <FaEnvelope />
 
             <input
@@ -104,37 +93,26 @@ function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-
           </div>
 
           {/* Password */}
           <div className="auth-field">
-
             <FaLock />
 
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
               value={password}
-              onChange={(e) =>
-                setPassword(e.target.value)
-              }
+              onChange={(e) => setPassword(e.target.value)}
             />
 
             <button
               type="button"
               className="password-toggle"
-              onClick={() =>
-                setShowPassword(!showPassword)
-              }
+              onClick={() => setShowPassword(!showPassword)}
             >
-              {showPassword ? (
-                <FaEyeSlash />
-              ) : (
-                <FaEye />
-              )}
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
             </button>
-
           </div>
 
           {/* Login button */}
@@ -152,7 +130,6 @@ function Login() {
               </>
             )}
           </button>
-
         </form>
 
         <div className="auth-divider">
@@ -161,11 +138,8 @@ function Login() {
 
         <p className="auth-switch">
           Don't have an account?
-          <Link to="/register">
-            Create account
-          </Link>
+          <Link to="/register">Create account</Link>
         </p>
-
       </div>
     </div>
   );
