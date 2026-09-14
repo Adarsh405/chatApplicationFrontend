@@ -21,7 +21,7 @@ function Home() {
     const fetchUsers = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/users",
+          `${import.meta.env.VITE_API_URL}/api/users`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -32,11 +32,12 @@ function Home() {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message);
+          throw new Error(
+            data.message || "Failed to fetch users"
+          );
         }
 
         setUsers(data.users || data);
-
       } catch (error) {
         console.error("Users error:", error);
       } finally {
@@ -47,7 +48,6 @@ function Home() {
     fetchUsers();
   }, [token, navigate]);
 
-
   if (loading) {
     return (
       <div className="loading-screen">
@@ -56,10 +56,8 @@ function Home() {
     );
   }
 
-
   return (
     <div className="app-container">
-
       <Sidebar
         users={users}
         selectedUser={selectedUser}
@@ -69,7 +67,6 @@ function Home() {
       <ChatWindow
         selectedUser={selectedUser}
       />
-
     </div>
   );
 }
