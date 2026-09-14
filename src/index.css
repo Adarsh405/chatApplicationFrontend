@@ -1,0 +1,2107 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background: #111827;
+  color: white;
+}
+
+/* =========================
+   MAIN APP
+========================= */
+
+.app-container {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+}
+
+
+/* =========================
+   SIDEBAR
+========================= */
+
+.sidebar {
+  width: 376px;
+  min-width: 376px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #111114;
+  border-right: 1px solid #29292e;
+}
+
+
+/* Header */
+
+.sidebar-header {
+  height: 82px;
+  min-height: 82px;
+  padding: 0 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  border-bottom: 1px solid #29292e;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo h2 {
+  color: white;
+  font-size: 22px;
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: white;
+  color: black;
+  border-radius: 10px;
+
+  font-size: 20px;
+}
+
+.sidebar-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  color: #888;
+}
+
+.sidebar-actions svg {
+  cursor: pointer;
+}
+
+
+/* =========================
+   SEARCH
+========================= */
+
+.search-box {
+  margin: 20px;
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 0 15px;
+
+  background: #1c1c20;
+  border-radius: 12px;
+
+  color: #777;
+}
+
+.search-box input {
+  width: 100%;
+  border: none;
+  outline: none;
+
+  background: transparent;
+  color: white;
+
+  font-size: 14px;
+}
+
+.search-box input::placeholder {
+  color: #777;
+}
+
+
+/* =========================
+   USERS
+========================= */
+
+.users-section {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+
+  padding: 5px 22px 12px;
+
+  color: #8b8b93;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+
+/* User item */
+
+.user-item {
+  width: 100%;
+  min-height: 82px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+
+  padding: 12px 20px;
+
+  cursor: pointer;
+
+  transition: background 0.2s ease;
+}
+
+.user-item:hover {
+  background: #1c1c20;
+}
+
+.user-item.active {
+  background: #252529;
+}
+
+
+/* =========================
+   AVATAR
+========================= */
+
+.avatar-container {
+  position: relative;
+
+  width: 52px;
+  min-width: 52px;
+  height: 52px;
+}
+
+.avatar-container img {
+  display: block;
+
+  width: 52px !important;
+  height: 52px !important;
+
+  min-width: 52px;
+  min-height: 52px;
+
+  max-width: 52px;
+  max-height: 52px;
+
+  border-radius: 50%;
+
+  object-fit: cover;
+}
+
+
+/* Online dot */
+
+.online-dot {
+  position: absolute;
+
+  right: -1px;
+  bottom: 0;
+
+  width: 12px;
+  height: 12px;
+
+  background: #22c55e;
+
+  border: 2px solid #111114;
+
+  border-radius: 50%;
+}
+
+
+/* =========================
+   USER INFO
+========================= */
+
+.user-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.user-info h3 {
+  margin: 0;
+
+  color: white;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-info p {
+  margin-top: 5px;
+
+  color: #8b8b93;
+
+  font-size: 13px;
+}
+
+
+/* =========================
+   PROFILE
+========================= */
+
+.sidebar-profile {
+  height: 72px;
+  min-height: 72px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 0 20px;
+
+  border-top: 1px solid #29292e;
+}
+
+.sidebar-profile img {
+  width: 45px !important;
+  height: 45px !important;
+
+  min-width: 45px;
+  min-height: 45px;
+
+  border-radius: 50%;
+
+  object-fit: cover;
+}
+
+.sidebar-profile h3 {
+  color: white;
+  font-size: 14px;
+}
+
+.sidebar-profile span {
+  display: block;
+
+  margin-top: 4px;
+
+  color: #22c55e;
+
+  font-size: 12px;
+}
+
+
+/* =========================
+   CHAT WINDOW
+========================= */
+
+.chat-window {
+  flex: 1;
+  min-width: 0;
+
+  height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+
+  background: #111827;
+}
+
+
+/* =========================
+   CHAT HEADER
+========================= */
+
+.chat-header {
+  height: 76px;
+  min-height: 76px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 25px;
+
+  background: #111114;
+
+  border-bottom: 1px solid #29292e;
+}
+
+.chat-user-info {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+}
+
+.chat-user-info img {
+  width: 45px !important;
+  height: 45px !important;
+
+  min-width: 45px;
+  min-height: 45px;
+
+  border-radius: 50%;
+
+  object-fit: cover;
+}
+
+.chat-user-info h3 {
+  color: white;
+  font-size: 16px;
+}
+
+.chat-user-info span {
+  display: block;
+
+  margin-top: 4px;
+
+  color: #22c55e;
+
+  font-size: 12px;
+}
+
+
+/* Call buttons */
+
+.chat-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chat-actions button {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #1f2937;
+
+  color: white;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.chat-actions button:hover {
+  background: #374151;
+}
+
+
+/* =========================
+   MESSAGES
+========================= */
+
+.messages-container {
+  flex: 1;
+
+  min-height: 0;
+
+  padding: 25px;
+
+  overflow-y: auto;
+}
+
+.messages-loading,
+.no-messages {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  color: #9ca3af;
+}
+
+.no-messages p {
+  color: white;
+
+  font-size: 18px;
+
+  margin-bottom: 6px;
+}
+
+.no-messages span {
+  color: #6b7280;
+}
+
+
+/* =========================
+   MESSAGE INPUT
+========================= */
+
+.message-input {
+  min-height: 72px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 12px 20px;
+
+  background: #111114;
+
+  border-top: 1px solid #29292e;
+}
+
+
+/* =========================
+   EMPTY CHAT
+========================= */
+
+.empty-chat {
+  flex: 1;
+
+  height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  background: #111827;
+
+  color: white;
+}
+
+.empty-chat h2 {
+  margin-bottom: 8px;
+}
+
+.empty-chat p {
+  color: #9ca3af;
+}
+
+
+/* =========================
+   LOADING
+========================= */
+
+.loading-screen {
+  width: 100%;
+  height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #111827;
+
+  color: white;
+
+  font-size: 20px;
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 300px;
+    min-width: 300px;
+  }
+}
+
+@media (max-width: 600px) {
+  .sidebar {
+    width: 75px;
+    min-width: 75px;
+  }
+
+  .sidebar-header h2,
+  .search-box input,
+  .section-title,
+  .user-info,
+  .sidebar-profile > div {
+    display: none;
+  }
+
+  .search-box {
+    margin: 12px;
+    justify-content: center;
+  }
+
+  .user-item {
+    justify-content: center;
+    padding: 12px;
+  }
+}
+/* =========================
+   MESSAGE INPUT
+========================= */
+
+.message-input {
+  width: 100%;
+  min-height: 76px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 14px 20px;
+
+  background: #111114;
+
+  border-top: 1px solid #29292e;
+}
+
+.message-input input {
+  flex: 1;
+
+  height: 48px;
+
+  padding: 0 16px;
+
+  border: none;
+  outline: none;
+
+  border-radius: 12px;
+
+  background: #1c1c20;
+
+  color: white;
+
+  font-size: 14px;
+}
+
+.message-input input::placeholder {
+  color: #777;
+}
+
+.input-icon {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  background: transparent;
+
+  color: #8b8b93;
+
+  cursor: pointer;
+
+  font-size: 17px;
+
+  border-radius: 50%;
+
+  transition: 0.2s;
+}
+
+.input-icon:hover {
+  color: white;
+  background: #1c1c20;
+}
+
+.send-button {
+  width: 48px;
+  height: 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+
+  border-radius: 12px;
+
+  background: white;
+
+  color: #111827;
+
+  cursor: pointer;
+
+  font-size: 17px;
+
+  transition: 0.2s;
+}
+
+.send-button:hover {
+  transform: scale(1.05);
+}
+/* =====================================
+   PREMIUM MESSAGE DESIGN
+===================================== */
+
+.messages-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  padding: 28px 32px;
+
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+
+/* =====================================
+   MESSAGE ROW
+===================================== */
+
+.message-row {
+  width: 100%;
+
+  display: flex;
+
+  animation: messageAppear 0.35s ease-out;
+}
+
+.message-own {
+  justify-content: flex-end;
+}
+
+.message-other {
+  justify-content: flex-start;
+}
+
+
+/* =====================================
+   MESSAGE CONTENT
+===================================== */
+
+.message-content {
+  max-width: min(65%, 600px);
+
+  position: relative;
+}
+
+.content-own {
+  display: flex;
+  justify-content: flex-end;
+}
+
+
+/* =====================================
+   MESSAGE BUBBLE
+===================================== */
+
+.message-bubble {
+  position: relative;
+
+  padding: 12px 15px 9px;
+
+  border-radius: 18px;
+
+  word-wrap: break-word;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+/* Received */
+
+.bubble-other {
+  background: rgba(255, 255, 255, 0.07);
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  border-top-left-radius: 5px;
+
+  color: #f5f5f5;
+
+  box-shadow:
+    0 5px 20px rgba(0, 0, 0, 0.12);
+
+  backdrop-filter: blur(10px);
+}
+
+
+/* Sent */
+
+.bubble-own {
+  background: linear-gradient(
+    135deg,
+    #6366f1,
+    #8b5cf6
+  );
+
+  border-top-right-radius: 5px;
+
+  color: white;
+
+  box-shadow:
+    0 8px 25px rgba(99, 102, 241, 0.22);
+}
+
+
+/* Hover */
+
+.message-bubble:hover {
+  transform: translateY(-1px);
+}
+
+.bubble-other:hover {
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.2);
+}
+
+.bubble-own:hover {
+  box-shadow:
+    0 10px 30px rgba(99, 102, 241, 0.32);
+}
+
+
+/* =====================================
+   MESSAGE TEXT
+===================================== */
+
+.message-bubble p {
+  margin: 0;
+
+  font-size: 15px;
+
+  line-height: 1.5;
+
+  white-space: pre-wrap;
+}
+
+
+/* =====================================
+   MESSAGE META
+===================================== */
+
+.message-meta {
+  display: flex;
+
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 5px;
+
+  margin-top: 5px;
+
+  font-size: 10px;
+
+  opacity: 0.65;
+}
+
+.bubble-other .message-meta {
+  color: #a5a5ad;
+}
+
+.bubble-own .message-meta {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+
+/* Double check */
+
+.message-check {
+  font-size: 10px;
+
+  letter-spacing: -2px;
+
+  font-weight: bold;
+}
+
+
+/* =====================================
+   MESSAGE ANIMATION
+===================================== */
+
+@keyframes messageAppear {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+
+/* =====================================
+   SCROLLBAR
+===================================== */
+
+.messages-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: #34343b;
+
+  border-radius: 10px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: #4b4b55;
+}
+
+
+/* =====================================
+   EMPTY CHAT
+===================================== */
+
+.no-messages {
+  animation: emptyAppear 0.5s ease;
+}
+
+@keyframes emptyAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+
+/* =====================================
+   MOBILE
+===================================== */
+
+@media (max-width: 768px) {
+  .messages-container {
+    padding: 20px 15px;
+  }
+
+  .message-content {
+    max-width: 80%;
+  }
+
+  .message-bubble {
+    padding: 10px 13px 8px;
+  }
+
+  .message-bubble p {
+    font-size: 14px;
+  }
+}
+.chat-window {
+  position: relative;
+  overflow: hidden;
+}
+
+.messages-container {
+  background:
+    radial-gradient(
+      circle at 20% 20%,
+      rgba(99, 102, 241, 0.06),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 80% 80%,
+      rgba(139, 92, 246, 0.05),
+      transparent 30%
+    ),
+    #111827;
+}
+/* =========================================
+   AUTHENTICATION PAGES
+========================================= */
+
+.auth-page {
+  width: 100%;
+  min-height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  position: relative;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 20% 20%,
+      rgba(99, 102, 241, 0.15),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 80% 80%,
+      rgba(168, 85, 247, 0.12),
+      transparent 30%
+    ),
+    #080b14;
+}
+
+
+/* =========================================
+   ANIMATED ORBS
+========================================= */
+
+.auth-orb {
+  position: absolute;
+
+  border-radius: 50%;
+
+  filter: blur(1px);
+
+  pointer-events: none;
+
+  opacity: 0.5;
+
+  animation: floatOrb 10s ease-in-out infinite;
+}
+
+.orb-one {
+  width: 280px;
+  height: 280px;
+
+  top: -100px;
+  left: -80px;
+
+  background: rgba(99, 102, 241, 0.25);
+
+  box-shadow:
+    0 0 100px rgba(99, 102, 241, 0.3);
+}
+
+.orb-two {
+  width: 220px;
+  height: 220px;
+
+  right: -60px;
+  top: 20%;
+
+  background: rgba(168, 85, 247, 0.2);
+
+  animation-delay: -3s;
+
+  box-shadow:
+    0 0 100px rgba(168, 85, 247, 0.3);
+}
+
+.orb-three {
+  width: 180px;
+  height: 180px;
+
+  bottom: -70px;
+  left: 30%;
+
+  background: rgba(59, 130, 246, 0.16);
+
+  animation-delay: -6s;
+
+  box-shadow:
+    0 0 80px rgba(59, 130, 246, 0.3);
+}
+
+
+@keyframes floatOrb {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate(30px, -25px) scale(1.08);
+  }
+
+  66% {
+    transform: translate(-20px, 25px) scale(0.94);
+  }
+}
+
+
+/* =========================================
+   AUTH CARD
+========================================= */
+
+.auth-card {
+  width: 430px;
+
+  position: relative;
+  z-index: 2;
+
+  padding: 42px;
+
+  border-radius: 28px;
+
+  background: rgba(18, 20, 30, 0.78);
+
+  border: 1px solid rgba(255, 255, 255, 0.09);
+
+  backdrop-filter: blur(25px);
+
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  animation: authCardAppear 0.7s cubic-bezier(
+    0.16,
+    1,
+    0.3,
+    1
+  );
+}
+
+.register-card {
+  width: 450px;
+}
+
+
+@keyframes authCardAppear {
+
+  from {
+    opacity: 0;
+    transform:
+      translateY(35px)
+      scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+
+/* =========================================
+   LOGO
+========================================= */
+
+.auth-logo {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  margin-bottom: 30px;
+
+  color: white;
+
+  font-size: 24px;
+
+  font-weight: 700;
+
+  letter-spacing: -0.5px;
+}
+
+.auth-logo-icon {
+  width: 45px;
+  height: 45px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 13px;
+
+  background: white;
+
+  color: #111827;
+
+  font-size: 22px;
+
+  box-shadow:
+    0 10px 30px rgba(255, 255, 255, 0.1);
+}
+
+
+/* =========================================
+   HEADING
+========================================= */
+
+.auth-heading {
+  text-align: center;
+
+  margin-bottom: 28px;
+}
+
+.auth-heading h1 {
+  margin: 0 0 9px;
+
+  color: white;
+
+  font-size: 28px;
+
+  font-weight: 700;
+
+  letter-spacing: -0.8px;
+}
+
+.auth-heading p {
+  margin: 0;
+
+  color: #858998;
+
+  font-size: 14px;
+}
+
+
+/* =========================================
+   ERROR
+========================================= */
+
+.auth-error {
+  padding: 12px 14px;
+
+  margin-bottom: 18px;
+
+  border-radius: 10px;
+
+  background: rgba(239, 68, 68, 0.1);
+
+  border: 1px solid rgba(239, 68, 68, 0.2);
+
+  color: #f87171;
+
+  font-size: 13px;
+
+  animation: errorAppear 0.3s ease;
+}
+
+@keyframes errorAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* =========================================
+   INPUT
+========================================= */
+
+.auth-field {
+  width: 100%;
+  height: 54px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 0 16px;
+
+  margin-bottom: 15px;
+
+  border-radius: 13px;
+
+  background: rgba(255, 255, 255, 0.045);
+
+  border: 1px solid rgba(255, 255, 255, 0.07);
+
+  color: #737783;
+
+  transition:
+    border-color 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+.auth-field:focus-within {
+  border-color: rgba(129, 140, 248, 0.7);
+
+  background: rgba(99, 102, 241, 0.07);
+
+  box-shadow:
+    0 0 0 4px rgba(99, 102, 241, 0.08);
+
+  transform: translateY(-1px);
+}
+
+.auth-field input {
+  flex: 1;
+
+  width: 100%;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  color: white;
+
+  font-size: 14px;
+}
+
+.auth-field input::placeholder {
+  color: #666a76;
+}
+
+
+/* =========================================
+   PASSWORD TOGGLE
+========================================= */
+
+.password-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 4px;
+
+  border: none;
+
+  background: transparent;
+
+  color: #70737e;
+
+  cursor: pointer;
+
+  transition: color 0.2s ease;
+}
+
+.password-toggle:hover {
+  color: white;
+}
+
+
+/* =========================================
+   AUTH BUTTON
+========================================= */
+
+.auth-button {
+  width: 100%;
+  height: 54px;
+
+  margin-top: 8px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  border: none;
+
+  border-radius: 13px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #6366f1,
+      #8b5cf6
+    );
+
+  color: white;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 12px 30px rgba(99, 102, 241, 0.25);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.auth-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 16px 35px rgba(99, 102, 241, 0.35);
+}
+
+.auth-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.auth-button:disabled {
+  opacity: 0.7;
+
+  cursor: not-allowed;
+}
+
+
+/* =========================================
+   BUTTON LOADER
+========================================= */
+
+.button-loader {
+  width: 19px;
+  height: 19px;
+
+  border: 2px solid rgba(255, 255, 255, 0.3);
+
+  border-top-color: white;
+
+  border-radius: 50%;
+
+  animation: buttonSpin 0.7s linear infinite;
+}
+
+@keyframes buttonSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+/* =========================================
+   DIVIDER
+========================================= */
+
+.auth-divider {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  margin: 25px 0;
+
+  color: #50535e;
+
+  font-size: 10px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+
+  flex: 1;
+
+  height: 1px;
+
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.auth-divider span {
+  font-size: 10px;
+}
+
+
+/* =========================================
+   SWITCH
+========================================= */
+
+.auth-switch {
+  text-align: center;
+
+  color: #777b87;
+
+  font-size: 13px;
+}
+
+.auth-switch a {
+  margin-left: 6px;
+
+  color: #a5b4fc;
+
+  text-decoration: none;
+
+  font-weight: 600;
+
+  transition: color 0.2s ease;
+}
+
+.auth-switch a:hover {
+  color: white;
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 520px) {
+
+  .auth-page {
+    padding: 20px;
+  }
+
+  .auth-card,
+  .register-card {
+    width: 100%;
+
+    padding: 30px 24px;
+
+    border-radius: 22px;
+  }
+
+  .auth-heading h1 {
+    font-size: 24px;
+  }
+
+  .auth-logo {
+    margin-bottom: 25px;
+  }
+
+  .orb-one {
+    width: 180px;
+    height: 180px;
+  }
+
+  .orb-two {
+    width: 150px;
+    height: 150px;
+  }
+}
+/* =====================================================
+   VOICE CALL MODAL
+   ===================================================== */
+
+.call-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background:
+    radial-gradient(circle at 50% 35%, rgba(99, 102, 241, 0.2), transparent 35%),
+    rgba(5, 8, 20, 0.82);
+
+  backdrop-filter: blur(14px);
+
+  animation: callOverlayIn 0.35s ease forwards;
+}
+
+.call-card {
+  position: relative;
+  width: 360px;
+  padding: 42px 30px 32px;
+
+  text-align: center;
+
+  background: rgba(20, 24, 45, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28px;
+
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.5),
+    0 0 60px rgba(99, 102, 241, 0.15);
+
+  backdrop-filter: blur(25px);
+
+  animation: callCardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+/* glowing background */
+
+.call-card::before {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+
+  top: -90px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  background: rgba(99, 102, 241, 0.25);
+  border-radius: 50%;
+
+  filter: blur(40px);
+
+  animation: callGlow 3s ease-in-out infinite;
+}
+
+.call-status {
+  position: relative;
+  z-index: 2;
+
+  margin-bottom: 24px;
+
+  color: #a5b4fc;
+  font-size: 14px;
+  font-weight: 600;
+
+  letter-spacing: 1px;
+
+  animation: statusPulse 1.5s ease-in-out infinite;
+}
+
+.call-card > img {
+  position: relative;
+  z-index: 2;
+
+  width: 110px !important;
+  height: 110px !important;
+
+  object-fit: cover;
+
+  border-radius: 50%;
+
+  border: 4px solid rgba(255, 255, 255, 0.15);
+
+  box-shadow:
+    0 0 0 8px rgba(99, 102, 241, 0.08),
+    0 15px 35px rgba(0, 0, 0, 0.35);
+
+  animation: avatarPulse 2s ease-in-out infinite;
+}
+
+.call-card h2 {
+  position: relative;
+  z-index: 2;
+
+  margin: 20px 0 6px;
+
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.call-card p {
+  position: relative;
+  z-index: 2;
+
+  margin: 0;
+
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.call-controls {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+
+  margin-top: 32px;
+}
+
+.call-controls button {
+  width: 58px;
+  height: 58px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+
+  font-size: 21px;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.call-controls button:hover {
+  transform: translateY(-4px) scale(1.06);
+
+  background: rgba(255, 255, 255, 0.15);
+
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+.call-controls button:active {
+  transform: scale(0.92);
+}
+
+.call-controls .active-control {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+}
+
+.call-controls .end-call {
+  width: 64px;
+  height: 64px;
+
+  background: #ef4444;
+  border-color: #ef4444;
+
+  box-shadow:
+    0 10px 30px rgba(239, 68, 68, 0.3);
+}
+
+.call-controls .end-call:hover {
+  background: #dc2626;
+
+  box-shadow:
+    0 14px 35px rgba(239, 68, 68, 0.45);
+}
+
+
+/* =====================================================
+   VIDEO CALL
+   ===================================================== */
+
+.video-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #050816;
+
+  animation: videoOverlayIn 0.4s ease;
+}
+
+.remote-video {
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(circle at 50% 30%, #20264a, #070a16 70%);
+}
+
+/* fake remote video avatar */
+
+.remote-video > img {
+  position: absolute;
+
+  top: 50%;
+  left: 50%;
+
+  width: 150px !important;
+  height: 150px !important;
+
+  object-fit: cover;
+
+  transform: translate(-50%, -50%);
+
+  border-radius: 50%;
+
+  border: 5px solid rgba(255, 255, 255, 0.12);
+
+  box-shadow:
+    0 0 0 15px rgba(99, 102, 241, 0.05),
+    0 0 60px rgba(99, 102, 241, 0.2);
+
+  animation: videoAvatarPulse 2.5s ease-in-out infinite;
+}
+
+.video-name {
+  position: absolute;
+
+  top: 30px;
+  left: 30px;
+
+  padding: 10px 16px;
+
+  color: #ffffff;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  background: rgba(0, 0, 0, 0.35);
+
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+
+  backdrop-filter: blur(12px);
+
+  animation: slideDown 0.5s ease;
+}
+
+/* self camera preview */
+
+.self-video {
+  position: absolute;
+
+  right: 25px;
+  bottom: 115px;
+
+  width: 190px;
+  height: 125px;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+
+  padding: 12px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(99, 102, 241, 0.35),
+      rgba(20, 24, 45, 0.9)
+    );
+
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+
+  overflow: hidden;
+
+  animation: selfVideoIn 0.6s ease;
+}
+
+.self-video::before {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at 50% 40%,
+      rgba(255, 255, 255, 0.08),
+      transparent 50%
+    );
+}
+
+.self-video div {
+  position: relative;
+  z-index: 2;
+
+  color: white;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  padding: 5px 9px;
+
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 7px;
+}
+
+.video-controls {
+  position: absolute;
+
+  left: 50%;
+  bottom: 30px;
+
+  transform: translateX(-50%);
+
+  display: flex;
+  align-items: center;
+  gap: 18px;
+
+  padding: 12px 18px;
+
+  background: rgba(15, 18, 35, 0.72);
+
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+
+  backdrop-filter: blur(18px);
+
+  box-shadow:
+    0 15px 40px rgba(0, 0, 0, 0.35);
+
+  animation: controlsUp 0.5s ease;
+}
+
+.video-controls button {
+  width: 52px;
+  height: 52px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+
+  font-size: 20px;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.video-controls button:hover {
+  transform: translateY(-3px) scale(1.08);
+
+  background: rgba(255, 255, 255, 0.18);
+
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.video-controls button:active {
+  transform: scale(0.9);
+}
+
+.video-controls .end-call {
+  width: 58px;
+  height: 58px;
+
+  background: #ef4444;
+
+  box-shadow:
+    0 8px 25px rgba(239, 68, 68, 0.35);
+}
+
+.video-controls .end-call:hover {
+  background: #dc2626;
+
+  box-shadow:
+    0 10px 30px rgba(239, 68, 68, 0.5);
+}
+
+
+/* =====================================================
+   ANIMATIONS
+   ===================================================== */
+
+@keyframes callOverlayIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes callCardIn {
+  from {
+    opacity: 0;
+    transform: scale(0.82) translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes callGlow {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translateX(-50%) scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.3);
+  }
+}
+
+@keyframes statusPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes avatarPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 0 8px rgba(99, 102, 241, 0.08),
+      0 15px 35px rgba(0, 0, 0, 0.35);
+  }
+
+  50% {
+    transform: scale(1.05);
+    box-shadow:
+      0 0 0 18px rgba(99, 102, 241, 0.04),
+      0 20px 45px rgba(99, 102, 241, 0.2);
+  }
+}
+
+@keyframes videoOverlayIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes videoAvatarPulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  50% {
+    transform: translate(-50%, -50%) scale(1.04);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-15px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes selfVideoIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px) scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes controlsUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+
+/* =====================================================
+   MOBILE
+   ===================================================== */
+
+@media (max-width: 600px) {
+  .call-card {
+    width: calc(100% - 32px);
+    padding: 35px 22px 28px;
+    border-radius: 24px;
+  }
+
+  .call-card > img {
+    width: 95px !important;
+    height: 95px !important;
+  }
+
+  .call-card h2 {
+    font-size: 21px;
+  }
+
+  .self-video {
+    right: 15px;
+    bottom: 105px;
+
+    width: 135px;
+    height: 95px;
+
+    border-radius: 14px;
+  }
+
+  .video-controls {
+    bottom: 20px;
+    gap: 10px;
+    padding: 10px 14px;
+  }
+
+  .video-controls button {
+    width: 46px;
+    height: 46px;
+    font-size: 18px;
+  }
+
+  .video-controls .end-call {
+    width: 52px;
+    height: 52px;
+  }
+
+  .video-name {
+    top: 20px;
+    left: 20px;
+  }
+}
+.accept-call {
+  background: #22c55e !important;
+  color: white !important;
+
+  box-shadow:
+    0 10px 30px rgba(34, 197, 94, 0.3);
+}
+
+.accept-call:hover {
+  background: #16a34a !important;
+
+  box-shadow:
+    0 14px 35px rgba(34, 197, 94, 0.45) !important;
+}
+
+.call-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  background: transparent;
+  color: inherit;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
+}
+
+.call-button:hover {
+  transform: scale(1.15);
+  color: #818cf8;
+}
