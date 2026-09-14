@@ -28,6 +28,7 @@ function ChatWindow({ selectedUser }) {
     callState,
     incomingCall,
     muted,
+    remoteAudio,
     startCall,
     acceptCall,
     rejectCall,
@@ -103,14 +104,12 @@ function ChatWindow({ selectedUser }) {
           `${import.meta.env.VITE_API_URL}/api/messages/${selectedUser.id}`,
           {
             headers: {
-              Authorization:
-                `Bearer ${token}`,
+              Authorization: `Bearer ${token}`,
             },
           }
         );
 
-        const data =
-          await response.json();
+        const data = await response.json();
 
         if (!response.ok) {
           throw new Error(
@@ -153,6 +152,7 @@ function ChatWindow({ selectedUser }) {
         `${import.meta.env.VITE_API_URL}/api/messages/${selectedUser.id}`,
         {
           method: "POST",
+
           headers: {
             "Content-Type":
               "application/json",
@@ -177,7 +177,7 @@ function ChatWindow({ selectedUser }) {
         );
       }
 
-      // Add to sender screen
+      // Add message to sender screen
       setMessages((prev) => [
         ...prev,
         data.message,
@@ -229,6 +229,18 @@ function ChatWindow({ selectedUser }) {
   return (
     <div className="chat-window">
 
+      {/* =================================
+          PERSISTENT REMOTE AUDIO
+          IMPORTANT FOR VOICE CALL
+      ================================= */}
+
+      <audio
+        ref={remoteAudio}
+        autoPlay
+        playsInline
+        style={{ display: "none" }}
+      />
+
       {/* ==============================
           HEADER
       ============================== */}
@@ -260,7 +272,9 @@ function ChatWindow({ selectedUser }) {
 
         </div>
 
-        {/* CALL BUTTONS */}
+        {/* ==============================
+            CALL BUTTONS
+        ============================== */}
 
         <div className="chat-actions">
 
@@ -348,7 +362,13 @@ function ChatWindow({ selectedUser }) {
         <CallModal
           user={
             incomingCall
-              ? selectedUser
+              ? {
+                  name:
+                    incomingCall.callerName,
+
+                  avatar:
+                    `https://i.pravatar.cc/150?u=${incomingCall.callerId}`,
+                }
               : selectedUser
           }
 
