@@ -16,10 +16,12 @@ function useVoiceCall(currentUser, selectedUser) {
 
   const peerConnection = useRef(null);
   const localStream = useRef(null);
+  const remoteAudio = useRef(null);
   const pendingOffer = useRef(null);
+  const pendingCandidates = useRef([]);
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser?.id) return;
 
     socket.emit("join", currentUser.id);
 
@@ -41,22 +43,42 @@ function useVoiceCall(currentUser, selectedUser) {
 
       if (!peerConnection.current) return;
 
-      await peerConnection.current.setRemoteDescription(
-        new RTCSessionDescription(data.answer)
-      );
+      try {
+        await peerConnection.current.setRemoteDescription(
+          new RTCSessionDescription(data.answer)
+        );
 
-      setCallState("connected");
+        await flushPendingCandidates();
+
+        setCallState("connected");
+      } catch (error) {
+        console.error("Set answer error:", error);
+      }
     };
 
     const handleIceCandidate = async (data) => {
-      if (!peerConnection.current) return;
+      console.log("ICE candidate received");
+
+      if (!peerConnection.current) {
+        pendingCandidates.current.push(data.candidate);
+        return;
+      }
 
       try {
-        await peerConnection.current.addIceCandidate(
-          new RTCIceCandidate(data.candidate)
-        );
+        if (
+          peerConnection.current.remoteDescription
+        ) {
+          await peerConnection.current.addIceCandidate(
+            new RTCIceCandidate(data.candidate)
+          );
+        } else {
+          pendingCandidates.current.push(data.candidate);
+        }
       } catch (error) {
-        console.error("ICE candidate error:", error);
+        console.error(
+          "ICE candidate error:",
+          error
+        );
       }
     };
 
@@ -64,39 +86,113 @@ function useVoiceCall(currentUser, selectedUser) {
       cleanupCall();
     };
 
-    socket.on("incoming_call", handleIncomingCall);
-    socket.on("webrtc_offer", handleOffer);
-    socket.on("webrtc_answer", handleAnswer);
+    socket.on(
+      "incoming_call",
+      handleIncomingCall
+    );
+
+    socket.on(
+      "webrtc_offer",
+      handleOffer
+    );
+
+    socket.on(
+      "webrtc_answer",
+      handleAnswer
+    );
+
     socket.on(
       "webrtc_ice_candidate",
       handleIceCandidate
     );
-    socket.on("call_ended", handleCallEnded);
+
+    socket.on(
+      "call_ended",
+      handleCallEnded
+    );
 
     return () => {
-      socket.off("incoming_call", handleIncomingCall);
-      socket.off("webrtc_offer", handleOffer);
+      socket.off(
+        "incoming_call",
+        handleIncomingCall
+      );
+
+      socket.off(
+        "webrtc_offer",
+        handleOffer
+      );
+
       socket.off(
         "webrtc_answer",
         handleAnswer
       );
+
       socket.off(
         "webrtc_ice_candidate",
         handleIceCandidate
       );
-      socket.off("call_ended", handleCallEnded);
+
+      socket.off(
+        "call_ended",
+        handleCallEnded
+      );
     };
-  }, [currentUser]);
+  }, [currentUser?.id]);
+
+  const flushPendingCandidates = async () => {
+    if (!peerConnection.current) return;
+
+    for (const candidate of pendingCandidates.current) {
+      try {
+        await peerConnection.current.addIceCandidate(
+          new RTCIceCandidate(candidate)
+        );
+      } catch (error) {
+        console.error(
+          "Pending ICE error:",
+          error
+        );
+      }
+    }
+
+    pendingCandidates.current = [];
+  };
 
   const createPeerConnection = (receiverId) => {
-    const pc = new RTCPeerConnection(ICE_SERVERS);
+    const pc = new RTCPeerConnection(
+      ICE_SERVERS
+    );
 
+    // Receive remote audio
+    pc.ontrack = (event) => {
+      console.log("Remote track received");
+
+      const [stream] = event.streams;
+
+      if (remoteAudio.current && stream) {
+        remoteAudio.current.srcObject = stream;
+
+        remoteAudio.current
+          .play()
+          .catch((error) => {
+            console.log(
+              "Audio autoplay blocked:",
+              error
+            );
+          });
+      }
+    };
+
+    // ICE candidates
     pc.onicecandidate = (event) => {
       if (event.candidate) {
-        socket.emit("webrtc_ice_candidate", {
-          receiverId,
-          candidate: event.candidate,
-        });
+        socket.emit(
+          "webrtc_ice_candidate",
+          {
+            receiverId,
+            candidate: event.candidate,
+          }
+        );
       }
     };
 
@@ -107,15 +203,19 @@ function useVoiceCall(currentUser, selectedUser) {
       );
 
       if (
-        pc.connectionState === "connected"
+        pc.connectionState ===
+        "connected"
       ) {
         setCallState("connected");
       }
 
       if (
-        pc.connectionState === "failed" ||
-        pc.connectionState === "disconnected" ||
-        pc.connectionState === "closed"
+        pc.connectionState ===
+          "failed" ||
+        pc.connectionState ===
+          "disconnected" ||
+        pc.connectionState ===
+          "closed"
       ) {
         cleanupCall();
       }
@@ -127,31 +227,46 @@ function useVoiceCall(currentUser, selectedUser) {
   };
 
   const startCall = async () => {
-    if (!currentUser || !selectedUser) return;
+    if (!currentUser || !selectedUser) {
+      return;
+    }
 
     try {
+      console.log("Starting voice call...");
+
       const stream =
-        await navigator.mediaDevices.getUserMedia({
-          audio: true,
-          video: false,
-        });
+        await navigator.mediaDevices.getUserMedia(
+          {
+            audio: true,
+            video: false,
+          }
+        );
+
+      console.log(
+        "Microphone access granted"
+      );
 
       localStream.current = stream;
 
-      const pc = createPeerConnection(
-        selectedUser.id
+      const pc =
+        createPeerConnection(
+          selectedUser.id
+        );
+
+      stream
+        .getTracks()
+        .forEach((track) => {
+          pc.addTrack(track, stream);
+        });
+
+      const offer =
+        await pc.createOffer();
+
+      await pc.setLocalDescription(
+        offer
       );
 
-      stream.getTracks().forEach((track) => {
-        pc.addTrack(track, stream);
-      });
-
-      const offer = await pc.createOffer();
-
-      await pc.setLocalDescription(offer);
-
       socket.emit("call_user", {
-        senderId: currentUser.id,
         callerId: currentUser.id,
         receiverId: selectedUser.id,
         callerName: currentUser.name,
@@ -165,7 +280,10 @@ function useVoiceCall(currentUser, selectedUser) {
 
       setCallState("calling");
     } catch (error) {
-      console.error("Start call error:", error);
+      console.error(
+        "Start call error:",
+        error
+      );
 
       alert(
         "Microphone permission is required for voice calls."
@@ -176,24 +294,46 @@ function useVoiceCall(currentUser, selectedUser) {
   };
 
   const acceptCall = async () => {
-    if (!incomingCall || !pendingOffer.current) return;
+    if (
+      !incomingCall ||
+      !pendingOffer.current
+    ) {
+      console.log(
+        "No incoming offer available"
+      );
+
+      return;
+    }
 
     try {
+      console.log(
+        "Accepting voice call..."
+      );
+
       const stream =
-        await navigator.mediaDevices.getUserMedia({
-          audio: true,
-          video: false,
-        });
+        await navigator.mediaDevices.getUserMedia(
+          {
+            audio: true,
+            video: false,
+          }
+        );
+
+      console.log(
+        "Microphone access granted"
+      );
 
       localStream.current = stream;
 
-      const pc = createPeerConnection(
-        incomingCall.callerId
-      );
+      const pc =
+        createPeerConnection(
+          incomingCall.callerId
+        );
 
-      stream.getTracks().forEach((track) => {
-        pc.addTrack(track, stream);
-      });
+      stream
+        .getTracks()
+        .forEach((track) => {
+          pc.addTrack(track, stream);
+        });
 
       await pc.setRemoteDescription(
         new RTCSessionDescription(
@@ -201,19 +341,29 @@ function useVoiceCall(currentUser, selectedUser) {
         )
       );
 
-      const answer = await pc.createAnswer();
+      await flushPendingCandidates();
 
-      await pc.setLocalDescription(answer);
+      const answer =
+        await pc.createAnswer();
+
+      await pc.setLocalDescription(
+        answer
+      );
 
       socket.emit("webrtc_answer", {
-        receiverId: incomingCall.callerId,
+        receiverId:
+          incomingCall.callerId,
         answer,
       });
 
       setIncomingCall(null);
       setCallState("connected");
     } catch (error) {
-      console.error("Accept call error:", error);
+      console.error(
+        "Accept call error:",
+        error
+      );
+
       cleanupCall();
     }
   };
@@ -222,22 +372,20 @@ function useVoiceCall(currentUser, selectedUser) {
     if (!incomingCall) return;
 
     socket.emit("end_call", {
-      receiverId: incomingCall.callerId,
+      receiverId:
+        incomingCall.callerId,
     });
 
-    setIncomingCall(null);
-    setCallState("idle");
-
-    pendingOffer.current = null;
+    cleanupCall();
   };
 
   const toggleMute = () => {
     if (!localStream.current) return;
 
-    const audioTracks =
+    const tracks =
       localStream.current.getAudioTracks();
 
-    audioTracks.forEach((track) => {
+    tracks.forEach((track) => {
       track.enabled = !track.enabled;
     });
 
@@ -262,17 +410,26 @@ function useVoiceCall(currentUser, selectedUser) {
     if (localStream.current) {
       localStream.current
         .getTracks()
-        .forEach((track) => track.stop());
+        .forEach((track) => {
+          track.stop();
+        });
 
       localStream.current = null;
     }
 
     if (peerConnection.current) {
       peerConnection.current.close();
+
       peerConnection.current = null;
     }
 
+    if (remoteAudio.current) {
+      remoteAudio.current.srcObject =
+        null;
+    }
+
     pendingOffer.current = null;
+    pendingCandidates.current = [];
 
     setIncomingCall(null);
     setCallState("idle");
@@ -283,6 +440,7 @@ function useVoiceCall(currentUser, selectedUser) {
     callState,
     incomingCall,
     muted,
+    remoteAudio,
     startCall,
     acceptCall,
     rejectCall,
