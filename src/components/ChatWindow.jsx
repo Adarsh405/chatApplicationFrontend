@@ -100,7 +100,7 @@ function ChatWindow({ selectedUser }) {
         setLoading(true);
 
         const response = await fetch(
-          `http://localhost:5000/api/messages/${selectedUser.id}`,
+          `${import.meta.env.VITE_API_URL}/api/messages/${selectedUser.id}`,
           {
             headers: {
               Authorization:
@@ -150,7 +150,7 @@ function ChatWindow({ selectedUser }) {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/messages/${selectedUser.id}`,
+        `${import.meta.env.VITE_API_URL}/api/messages/${selectedUser.id}`,
         {
           method: "POST",
           headers: {
