@@ -35,7 +35,7 @@ function Register() {
       setLoading(true);
 
       const response = await fetch(
-        "http://localhost:5000/api/auth/register",
+        `${import.meta.env.VITE_API_URL}/api/auth/register`,
         {
           method: "POST",
 
@@ -60,6 +60,7 @@ function Register() {
       }
 
       localStorage.setItem("token", data.token);
+
       localStorage.setItem(
         "user",
         JSON.stringify(data.user)
@@ -68,13 +69,16 @@ function Register() {
       navigate("/home");
 
     } catch (error) {
-      setError(error.message);
+      console.error("Registration error:", error);
+
+      setError(
+        error.message || "Something went wrong"
+      );
 
     } finally {
       setLoading(false);
     }
   };
-
 
   return (
     <div className="auth-page">
@@ -95,7 +99,6 @@ function Register() {
           <span>Pulse</span>
         </div>
 
-
         <div className="auth-heading">
           <h1>Create your account</h1>
 
@@ -104,19 +107,16 @@ function Register() {
           </p>
         </div>
 
-
         {error && (
           <div className="auth-error">
             {error}
           </div>
         )}
 
-
         <form onSubmit={handleRegister}>
 
           {/* Name */}
           <div className="auth-field">
-
             <FaUser />
 
             <input
@@ -127,13 +127,10 @@ function Register() {
                 setName(e.target.value)
               }
             />
-
           </div>
-
 
           {/* Email */}
           <div className="auth-field">
-
             <FaEnvelope />
 
             <input
@@ -144,13 +141,10 @@ function Register() {
                 setEmail(e.target.value)
               }
             />
-
           </div>
-
 
           {/* Password */}
           <div className="auth-field">
-
             <FaLock />
 
             <input
@@ -179,9 +173,7 @@ function Register() {
                 <FaEye />
               )}
             </button>
-
           </div>
-
 
           {/* Register */}
           <button
@@ -201,11 +193,9 @@ function Register() {
 
         </form>
 
-
         <div className="auth-divider">
           <span>OR</span>
         </div>
-
 
         <p className="auth-switch">
           Already have an account?
