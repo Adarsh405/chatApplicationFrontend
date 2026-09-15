@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FaPhone, FaVideo } from "react-icons/fa";
 
 import Message from "./Message";
@@ -13,6 +13,45 @@ function ChatWindow({ selectedUser }) {
   const [messages, setMessages] = useState([]);
   const [videoCall, setVideoCall] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // =================================
+  // AUTO SCROLL REF
+  // =================================
+
+  const messagesEndRef = useRef(null);
+
+  // =================================
+  // MESSAGE NOTIFICATION SOUND
+  // =================================
+
+  const messageSound = useRef(null);
+
+  useEffect(() => {
+    messageSound.current = new Audio(
+      "/sounds/message.mp3"
+    );
+
+    messageSound.current.volume = 0.7;
+  }, []);
+
+  const playMessageSound = () => {
+    if (!messageSound.current) return;
+
+    messageSound.current.currentTime = 0;
+
+    messageSound.current
+      .play()
+      .catch((error) => {
+        console.log(
+          "Message notification blocked:",
+          error
+        );
+      });
+  };
+
+  // =================================
+  // CURRENT USER
+  // =================================
 
   const token = localStorage.getItem("token");
 
@@ -50,7 +89,42 @@ function ChatWindow({ selectedUser }) {
       "join",
       currentUser.id
     );
+
+    console.log(
+      "Joined socket room:",
+      currentUser.id
+    );
   }, [currentUser?.id]);
+
+  // =================================
+  // AUTO SCROLL FUNCTION
+  // =================================
+
+  const scrollToBottom = (
+    smooth = true
+  ) => {
+    if (!messagesEndRef.current) return;
+
+    messagesEndRef.current.scrollIntoView({
+      behavior: smooth
+        ? "smooth"
+        : "auto",
+      block: "end",
+    });
+  };
+
+  // =================================
+  // AUTO SCROLL WHEN MESSAGES CHANGE
+  // =================================
+
+  useEffect(() => {
+    if (messages.length === 0) return;
+
+    // Small delay allows DOM to update first
+    setTimeout(() => {
+      scrollToBottom(true);
+    }, 50);
+  }, [messages]);
 
   // =================================
   // RECEIVE REAL-TIME MESSAGE
@@ -58,22 +132,53 @@ function ChatWindow({ selectedUser }) {
 
   useEffect(() => {
     const handleReceiveMessage = (data) => {
+      console.log(
+        "Received message:",
+        data
+      );
+
+      // Ignore messages from current user
       if (
         Number(data.senderId) ===
+        Number(currentUser?.id)
+      ) {
+        return;
+      }
+
+      // Only add message to currently
+      // selected conversation
+      if (
+        Number(data.senderId) !==
         Number(selectedUser?.id)
       ) {
-        const newMessage = {
-          id: `socket-${Date.now()}-${Math.random()}`,
-          message: data.message,
-          sender_id: data.senderId,
-          created_at: new Date().toISOString(),
-        };
-
-        setMessages((prev) => [
-          ...prev,
-          newMessage,
-        ]);
+        return;
       }
+
+      const newMessage = {
+        id: `socket-${Date.now()}-${Math.random()}`,
+
+        message:
+          data.message,
+
+        sender_id:
+          data.senderId,
+
+        created_at:
+          new Date().toISOString(),
+      };
+
+      setMessages((prev) => [
+        ...prev,
+        newMessage,
+      ]);
+
+      // Play notification
+      playMessageSound();
+
+      // Scroll to new message
+      setTimeout(() => {
+        scrollToBottom(true);
+      }, 100);
     };
 
     socket.on(
@@ -87,7 +192,10 @@ function ChatWindow({ selectedUser }) {
         handleReceiveMessage
       );
     };
-  }, [selectedUser]);
+  }, [
+    selectedUser?.id,
+    currentUser?.id,
+  ]);
 
   // =================================
   // LOAD OLD MESSAGES
@@ -104,12 +212,14 @@ function ChatWindow({ selectedUser }) {
           `${import.meta.env.VITE_API_URL}/api/messages/${selectedUser.id}`,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization:
+                `Bearer ${token}`,
             },
           }
         );
 
-        const data = await response.json();
+        const data =
+          await response.json();
 
         if (!response.ok) {
           throw new Error(
@@ -121,6 +231,12 @@ function ChatWindow({ selectedUser }) {
         setMessages(
           data.messages || []
         );
+
+        // Scroll after loading old messages
+        setTimeout(() => {
+          scrollToBottom(false);
+        }, 100);
+
       } catch (error) {
         console.error(
           "Messages error:",
@@ -132,7 +248,10 @@ function ChatWindow({ selectedUser }) {
     };
 
     fetchMessages();
-  }, [selectedUser, token]);
+  }, [
+    selectedUser?.id,
+    token,
+  ]);
 
   // =================================
   // SEND MESSAGE
@@ -146,6 +265,9 @@ function ChatWindow({ selectedUser }) {
     ) {
       return;
     }
+
+    const messageText =
+      text.trim();
 
     try {
       const response = await fetch(
@@ -162,7 +284,8 @@ function ChatWindow({ selectedUser }) {
           },
 
           body: JSON.stringify({
-            message: text.trim(),
+            message:
+              messageText,
           }),
         }
       );
@@ -177,13 +300,19 @@ function ChatWindow({ selectedUser }) {
         );
       }
 
-      // Add message to sender screen
+      // =================================
+      // ADD MESSAGE TO OWN SCREEN
+      // =================================
+
       setMessages((prev) => [
         ...prev,
         data.message,
       ]);
 
-      // Send through Socket.IO
+      // =================================
+      // SOCKET MESSAGE
+      // =================================
+
       socket.emit(
         "send_message",
         {
@@ -194,9 +323,18 @@ function ChatWindow({ selectedUser }) {
             selectedUser.id,
 
           message:
-            text.trim(),
+            messageText,
         }
       );
+
+      // =================================
+      // SCROLL IMMEDIATELY
+      // =================================
+
+      setTimeout(() => {
+        scrollToBottom(true);
+      }, 50);
+
     } catch (error) {
       console.error(
         "Send message error:",
@@ -212,12 +350,16 @@ function ChatWindow({ selectedUser }) {
   if (!selectedUser) {
     return (
       <div className="empty-chat">
-        <h2>Select a user</h2>
+
+        <h2>
+          Select a user
+        </h2>
 
         <p>
-          Choose someone from the sidebar
-          to start chatting.
+          Choose someone from the
+          sidebar to start chatting.
         </p>
+
       </div>
     );
   }
@@ -231,19 +373,20 @@ function ChatWindow({ selectedUser }) {
 
       {/* =================================
           PERSISTENT REMOTE AUDIO
-          IMPORTANT FOR VOICE CALL
       ================================= */}
 
       <audio
         ref={remoteAudio}
         autoPlay
         playsInline
-        style={{ display: "none" }}
+        style={{
+          display: "none",
+        }}
       />
 
-      {/* ==============================
+      {/* =================================
           HEADER
-      ============================== */}
+      ================================= */}
 
       <div className="chat-header">
 
@@ -258,6 +401,7 @@ function ChatWindow({ selectedUser }) {
           />
 
           <div>
+
             <h3>
               {selectedUser.name}
             </h3>
@@ -268,13 +412,14 @@ function ChatWindow({ selectedUser }) {
                 ? "Online"
                 : "Offline"}
             </span>
+
           </div>
 
         </div>
 
-        {/* ==============================
+        {/* =================================
             CALL BUTTONS
-        ============================== */}
+        ================================= */}
 
         <div className="chat-actions">
 
@@ -305,9 +450,9 @@ function ChatWindow({ selectedUser }) {
 
       </div>
 
-      {/* ==============================
+      {/* =================================
           MESSAGES
-      ============================== */}
+      ================================= */}
 
       <div className="messages-container">
 
@@ -315,7 +460,9 @@ function ChatWindow({ selectedUser }) {
           <div className="messages-loading">
             Loading messages...
           </div>
+
         ) : messages.length === 0 ? (
+
           <div className="no-messages">
 
             <p>
@@ -327,8 +474,11 @@ function ChatWindow({ selectedUser }) {
             </span>
 
           </div>
+
         ) : (
+
           messages.map((message) => (
+
             <Message
               key={message.id}
               message={message}
@@ -341,24 +491,38 @@ function ChatWindow({ selectedUser }) {
                 )
               }
             />
+
           ))
+
         )}
+
+        {/* =================================
+            IMPORTANT SCROLL TARGET
+        ================================= */}
+
+        <div
+          ref={messagesEndRef}
+          style={{
+            height: "1px",
+          }}
+        />
 
       </div>
 
-      {/* ==============================
+      {/* =================================
           MESSAGE INPUT
-      ============================== */}
+      ================================= */}
 
       <MessageInput
         onSend={sendMessage}
       />
 
-      {/* ==============================
+      {/* =================================
           VOICE CALL
-      ============================== */}
+      ================================= */}
 
       {callState !== "idle" && (
+
         <CallModal
           user={
             incomingCall
@@ -372,7 +536,9 @@ function ChatWindow({ selectedUser }) {
               : selectedUser
           }
 
-          callState={callState}
+          callState={
+            callState
+          }
 
           incoming={
             callState === "incoming"
@@ -395,20 +561,28 @@ function ChatWindow({ selectedUser }) {
           onClose={
             endCall
           }
+
+          remoteAudio={
+            remoteAudio
+          }
         />
+
       )}
 
-      {/* ==============================
+      {/* =================================
           VIDEO CALL
-      ============================== */}
+      ================================= */}
 
       {videoCall && (
+
         <VideoCall
           user={selectedUser}
+
           onClose={() =>
             setVideoCall(false)
           }
         />
+
       )}
 
     </div>
