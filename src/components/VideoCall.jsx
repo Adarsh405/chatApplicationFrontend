@@ -4,265 +4,195 @@ import {
   FiVideo,
   FiVideoOff,
   FiPhoneOff,
+  FiPhone,
 } from "react-icons/fi";
-
-import { useEffect, useRef } from "react";
 
 function VideoCall({
   user,
   callState,
   incoming,
-  localStream,
-  remoteStream,
   muted,
   camera,
-  onToggleMute,
-  onToggleCamera,
+  remoteVideo,
+  localVideo,
   onAccept,
   onReject,
+  onToggleMute,
+  onToggleCamera,
   onClose,
 }) {
-  const localVideoRef = useRef(null);
-  const remoteVideoRef = useRef(null);
+  // ==========================================
+  // INCOMING CALL
+  // ==========================================
 
-  // ===============================
-  // LOCAL VIDEO
-  // ===============================
+  if (incoming) {
+    return (
+      <div className="video-overlay">
+        <div className="video-incoming-card">
+          <div className="video-incoming-label">
+            Incoming video call
+          </div>
 
-  useEffect(() => {
-    if (!localVideoRef.current) return;
+          <img
+            src={
+              user?.avatar ||
+              `https://i.pravatar.cc/150?u=${user?.id}`
+            }
+            alt={user?.name}
+          />
 
-    if (localStream) {
-      localVideoRef.current.srcObject =
-        localStream;
+          <h2>{user?.name}</h2>
 
-      localVideoRef.current
-        .play()
-        .catch((error) => {
-          console.log(
-            "Local video play error:",
-            error
-          );
-        });
-    }
-  }, [localStream]);
+          <p>is calling you...</p>
 
-  // ===============================
-  // REMOTE VIDEO + AUDIO
-  // ===============================
+          <div className="video-incoming-controls">
+            <button
+              className="video-accept"
+              onClick={onAccept}
+              title="Accept"
+            >
+              <FiPhone />
+            </button>
 
-  useEffect(() => {
-    if (!remoteVideoRef.current) return;
+            <button
+              className="end-call"
+              onClick={onReject}
+              title="Reject"
+            >
+              <FiPhoneOff />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-    if (remoteStream) {
-      console.log(
-        "Attaching remote stream:",
-        remoteStream
-      );
-
-      remoteVideoRef.current.srcObject =
-        remoteStream;
-
-      remoteVideoRef.current.muted = false;
-      remoteVideoRef.current.volume = 1;
-
-      remoteVideoRef.current
-        .play()
-        .then(() => {
-          console.log(
-            "Remote video/audio started"
-          );
-        })
-        .catch((error) => {
-          console.error(
-            "Remote video/audio play error:",
-            error
-          );
-        });
-    }
-  }, [remoteStream]);
+  // ==========================================
+  // ACTIVE CALL
+  // ==========================================
 
   return (
     <div className="video-overlay">
-      <div className="video-call-container">
-
-        {/* ================================= */}
+      <div className="video-stage">
         {/* REMOTE VIDEO */}
-        {/* ================================= */}
 
-        <div className="remote-video-wrapper">
-          {remoteStream ? (
-            <video
-              ref={remoteVideoRef}
-              className="remote-video-element"
-              autoPlay
-              playsInline
-              controls={false}
+        <video
+          ref={remoteVideo}
+          className="remote-video-element"
+          autoPlay
+          playsInline
+        />
+
+        {/* Remote placeholder while connecting */}
+
+        {callState !== "connected" && (
+          <div className="video-connecting">
+            <img
+              src={
+                user?.avatar ||
+                `https://i.pravatar.cc/150?u=${user?.id}`
+              }
+              alt={user?.name}
             />
-          ) : (
-            <div className="remote-placeholder">
-              <div className="remote-avatar">
-                <img
-                  src={
-                    user?.avatar ||
-                    `https://i.pravatar.cc/150?u=${user?.id}`
-                  }
-                  alt={user?.name}
-                />
-              </div>
 
-              <h2>
-                {incoming
-                  ? `${user?.name} is calling`
-                  : user?.name}
-              </h2>
+            <h2>{user?.name}</h2>
 
-              <p>
-                {incoming
-                  ? "Incoming video call"
-                  : callState === "calling"
-                  ? "Calling..."
-                  : "Connecting..."}
-              </p>
+            <p>
+              {callState === "calling"
+                ? "Calling..."
+                : "Connecting..."}
+            </p>
+          </div>
+        )}
+
+        {/* USER NAME */}
+
+        <div className="video-user-name">
+          {user?.name}
+        </div>
+
+        {/* LOCAL VIDEO */}
+
+        <div className="local-video-container">
+          <video
+            ref={localVideo}
+            className="local-video-element"
+            autoPlay
+            muted
+            playsInline
+          />
+
+          {!camera && (
+            <div className="camera-off">
+              <FiVideoOff />
+              <span>Camera off</span>
             </div>
           )}
 
-          {/* Remote name */}
-
-          <div className="remote-user-name">
-            {user?.name}
+          <div className="you-label">
+            You
           </div>
-
-          {/* Connection status */}
-
-          {!incoming &&
-            callState !== "connected" && (
-              <div className="video-connecting">
-                <span className="connecting-dot"></span>
-                {callState === "calling"
-                  ? "Calling..."
-                  : "Connecting..."}
-              </div>
-            )}
         </div>
 
-        {/* ================================= */}
-        {/* LOCAL VIDEO */}
-        {/* ================================= */}
+        {/* STATUS */}
 
-        {!incoming && (
-          <div className="local-video-wrapper">
-            {camera && localStream ? (
-              <video
-                ref={localVideoRef}
-                className="local-video-element"
-                autoPlay
-                muted
-                playsInline
-              />
-            ) : (
-              <div className="local-camera-off">
-                <FiVideoOff />
-                <span>Camera off</span>
-              </div>
-            )}
+        <div className="video-call-status">
+          {callState === "calling"
+            ? "Calling..."
+            : callState === "connected"
+            ? "Connected"
+            : "Connecting..."}
+        </div>
 
-            <div className="local-name">
-              You
-            </div>
-          </div>
-        )}
-
-        {/* ================================= */}
-        {/* INCOMING CALL */}
-        {/* ================================= */}
-
-        {incoming && (
-          <div className="incoming-video-actions">
-
-            <button
-              className="accept-video"
-              onClick={onAccept}
-              title="Accept video call"
-            >
-              <FiVideo />
-            </button>
-
-            <button
-              className="reject-video"
-              onClick={onReject}
-              title="Reject video call"
-            >
-              <FiPhoneOff />
-            </button>
-
-          </div>
-        )}
-
-        {/* ================================= */}
         {/* CONTROLS */}
-        {/* ================================= */}
 
-        {!incoming && (
-          <div className="video-controls">
+        <div className="video-controls">
+          <button
+            className={
+              muted
+                ? "active-control"
+                : ""
+            }
+            onClick={onToggleMute}
+            title={
+              muted ? "Unmute" : "Mute"
+            }
+          >
+            {muted ? (
+              <FiMicOff />
+            ) : (
+              <FiMic />
+            )}
+          </button>
 
-            {/* MUTE */}
+          <button
+            className={
+              !camera
+                ? "active-control"
+                : ""
+            }
+            onClick={onToggleCamera}
+            title={
+              camera
+                ? "Turn camera off"
+                : "Turn camera on"
+            }
+          >
+            {camera ? (
+              <FiVideo />
+            ) : (
+              <FiVideoOff />
+            )}
+          </button>
 
-            <button
-              className={
-                muted
-                  ? "video-control active"
-                  : "video-control"
-              }
-              onClick={onToggleMute}
-              title={
-                muted
-                  ? "Unmute microphone"
-                  : "Mute microphone"
-              }
-            >
-              {muted ? (
-                <FiMicOff />
-              ) : (
-                <FiMic />
-              )}
-            </button>
-
-            {/* CAMERA */}
-
-            <button
-              className={
-                !camera
-                  ? "video-control active"
-                  : "video-control"
-              }
-              onClick={onToggleCamera}
-              title={
-                camera
-                  ? "Turn camera off"
-                  : "Turn camera on"
-              }
-            >
-              {camera ? (
-                <FiVideo />
-              ) : (
-                <FiVideoOff />
-              )}
-            </button>
-
-            {/* END */}
-
-            <button
-              className="video-control end-video"
-              onClick={onClose}
-              title="End call"
-            >
-              <FiPhoneOff />
-            </button>
-
-          </div>
-        )}
-
+          <button
+            className="end-call"
+            onClick={onClose}
+            title="End call"
+          >
+            <FiPhoneOff />
+          </button>
+        </div>
       </div>
     </div>
   );
