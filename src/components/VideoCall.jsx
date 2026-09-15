@@ -21,35 +21,39 @@ function VideoCall({
   onToggleCamera,
   onClose,
 }) {
-  // ==========================================
-  // INCOMING CALL
-  // ==========================================
+  // ==================================================
+  // INCOMING SCREEN
+  // ==================================================
 
   if (incoming) {
     return (
       <div className="video-overlay">
         <div className="video-incoming-card">
-          <div className="video-incoming-label">
-            Incoming video call
+
+          <div className="video-incoming-ring">
+            <img
+              src={
+                user?.avatar ||
+                `https://i.pravatar.cc/150?u=${user?.id}`
+              }
+              alt={user?.name || "User"}
+            />
           </div>
 
-          <img
-            src={
-              user?.avatar ||
-              `https://i.pravatar.cc/150?u=${user?.id}`
-            }
-            alt={user?.name}
-          />
+          <h2>
+            {user?.name || "Unknown"}
+          </h2>
 
-          <h2>{user?.name}</h2>
-
-          <p>is calling you...</p>
+          <p>
+            Incoming video call...
+          </p>
 
           <div className="video-incoming-controls">
+
             <button
-              className="video-accept"
+              className="accept-video"
               onClick={onAccept}
-              title="Accept"
+              title="Accept video call"
             >
               <FiPhone />
             </button>
@@ -57,24 +61,29 @@ function VideoCall({
             <button
               className="end-call"
               onClick={onReject}
-              title="Reject"
+              title="Reject video call"
             >
               <FiPhoneOff />
             </button>
+
           </div>
         </div>
       </div>
     );
   }
 
-  // ==========================================
-  // ACTIVE CALL
-  // ==========================================
+  // ==================================================
+  // ACTIVE / OUTGOING VIDEO CALL
+  // ==================================================
 
   return (
     <div className="video-overlay">
+
       <div className="video-stage">
-        {/* REMOTE VIDEO */}
+
+        {/* ==========================================
+            REMOTE VIDEO
+        ========================================== */}
 
         <video
           ref={remoteVideo}
@@ -83,37 +92,46 @@ function VideoCall({
           playsInline
         />
 
-        {/* Remote placeholder while connecting */}
+        {/* ==========================================
+            REMOTE PLACEHOLDER
+        ========================================== */}
 
-        {callState !== "connected" && (
-          <div className="video-connecting">
+        <div className="remote-placeholder">
+          <div className="remote-placeholder-avatar">
             <img
               src={
                 user?.avatar ||
                 `https://i.pravatar.cc/150?u=${user?.id}`
               }
-              alt={user?.name}
+              alt={user?.name || "User"}
             />
-
-            <h2>{user?.name}</h2>
-
-            <p>
-              {callState === "calling"
-                ? "Calling..."
-                : "Connecting..."}
-            </p>
           </div>
-        )}
 
-        {/* USER NAME */}
+          <h2>
+            {user?.name || "Unknown"}
+          </h2>
 
-        <div className="video-user-name">
-          {user?.name}
+          <p>
+            {callState === "connected"
+              ? "Video call connected"
+              : "Calling..."}
+          </p>
         </div>
 
-        {/* LOCAL VIDEO */}
+        {/* ==========================================
+            USER NAME
+        ========================================== */}
+
+        <div className="video-name">
+          {user?.name || "Unknown"}
+        </div>
+
+        {/* ==========================================
+            LOCAL VIDEO
+        ========================================== */}
 
         <div className="local-video-container">
+
           <video
             ref={localVideo}
             className="local-video-element"
@@ -123,39 +141,45 @@ function VideoCall({
           />
 
           {!camera && (
-            <div className="camera-off">
+            <div className="camera-off-overlay">
               <FiVideoOff />
               <span>Camera off</span>
             </div>
           )}
 
-          <div className="you-label">
+          <span className="local-video-label">
             You
-          </div>
+          </span>
+
         </div>
 
-        {/* STATUS */}
+        {/* ==========================================
+            CALL STATUS
+        ========================================== */}
 
         <div className="video-call-status">
-          {callState === "calling"
-            ? "Calling..."
-            : callState === "connected"
+          {callState === "connected"
             ? "Connected"
-            : "Connecting..."}
+            : "Calling..."}
         </div>
 
-        {/* CONTROLS */}
+        {/* ==========================================
+            CONTROLS
+        ========================================== */}
 
         <div className="video-controls">
+
           <button
             className={
               muted
-                ? "active-control"
-                : ""
+                ? "video-control active-control"
+                : "video-control"
             }
             onClick={onToggleMute}
             title={
-              muted ? "Unmute" : "Mute"
+              muted
+                ? "Unmute"
+                : "Mute"
             }
           >
             {muted ? (
@@ -168,8 +192,8 @@ function VideoCall({
           <button
             className={
               !camera
-                ? "active-control"
-                : ""
+                ? "video-control active-control"
+                : "video-control"
             }
             onClick={onToggleCamera}
             title={
@@ -186,13 +210,15 @@ function VideoCall({
           </button>
 
           <button
-            className="end-call"
+            className="video-control end-call"
             onClick={onClose}
             title="End call"
           >
             <FiPhoneOff />
           </button>
+
         </div>
+
       </div>
     </div>
   );

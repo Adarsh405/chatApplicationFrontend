@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
 import {
   FaPhone,
   FaVideo,
@@ -14,7 +19,9 @@ import useVideoCall from "../hooks/useVideoCall";
 
 import socket from "../socket";
 
-function ChatWindow({ selectedUser }) {
+function ChatWindow({
+  selectedUser,
+}) {
   const [messages, setMessages] =
     useState([]);
 
@@ -27,121 +34,246 @@ function ChatWindow({ selectedUser }) {
   const messageSound =
     useRef(null);
 
+  // ==================================================
+  // CURRENT USER
+  // ==================================================
+
   const token =
     localStorage.getItem("token");
 
-  const currentUser = JSON.parse(
-    localStorage.getItem("user")
-  );
+  const currentUser =
+    JSON.parse(
+      localStorage.getItem("user")
+    );
 
-  // =====================================
+  // ==================================================
+  // MESSAGE SOUND
+  // ==================================================
+
+  useEffect(() => {
+    messageSound.current =
+      new Audio(
+        "/sounds/message.mp3"
+      );
+
+    messageSound.current.volume =
+      0.7;
+
+    return () => {
+      if (messageSound.current) {
+        messageSound.current.pause();
+        messageSound.current = null;
+      }
+    };
+  }, []);
+
+  const playMessageSound = () => {
+    if (!messageSound.current) {
+      return;
+    }
+
+    messageSound.current.currentTime =
+      0;
+
+    messageSound.current
+      .play()
+      .catch(() => {});
+  };
+
+  // ==================================================
   // VOICE CALL
-  // =====================================
+  // ==================================================
 
   const {
-    callState: voiceCallState,
-    incomingCall: incomingVoiceCall,
-    muted: voiceMuted,
+    callState:
+      voiceCallState,
+
+    incomingCall:
+      incomingVoiceCall,
+
+    muted:
+      voiceMuted,
+
     remoteAudio,
-    startCall,
-    acceptCall,
-    rejectCall,
-    toggleMute: toggleVoiceMute,
-    endCall,
+
+    startCall:
+      startVoiceCall,
+
+    acceptCall:
+      acceptVoiceCall,
+
+    rejectCall:
+      rejectVoiceCall,
+
+    toggleMute:
+      toggleVoiceMute,
+
+    endCall:
+      endVoiceCall,
+
   } = useVoiceCall(
     currentUser,
     selectedUser
   );
 
-  // =====================================
+  // ==================================================
   // VIDEO CALL
-  // =====================================
+  // ==================================================
 
   const {
-    callState: videoCallState,
-    incomingCall: incomingVideoCall,
+    callState:
+      videoCallState,
 
-    muted: videoMuted,
-    camera: videoCamera,
+    incomingCall:
+      incomingVideoCall,
 
-    localStream,
-    remoteStream,
+    muted:
+      videoMuted,
 
-    startVideoCall,
-    acceptVideoCall,
-    rejectVideoCall,
+    camera,
 
-    toggleMute: toggleVideoMute,
+    remoteVideo,
+
+    localVideo,
+
+    startCall:
+      startVideoCall,
+
+    acceptCall:
+      acceptVideoCall,
+
+    rejectCall:
+      rejectVideoCall,
+
+    toggleMute:
+      toggleVideoMute,
+
     toggleCamera,
 
-    endVideoCall,
+    endCall:
+      endVideoCall,
+
   } = useVideoCall(
     currentUser,
     selectedUser
   );
 
-  // =====================================
-  // JOIN ROOM
-  // =====================================
+  // ==================================================
+  // JOIN SOCKET ROOM
+  // ==================================================
 
   useEffect(() => {
-    if (!currentUser?.id) return;
+    if (!currentUser?.id) {
+      return;
+    }
 
-    socket.emit(
-      "join",
-      currentUser.id
+    const joinRoom = () => {
+      socket.emit(
+        "join",
+        currentUser.id
+      );
+
+      console.log(
+        "Joined socket room:",
+        currentUser.id
+      );
+    };
+
+    if (socket.connected) {
+      joinRoom();
+    }
+
+    socket.on(
+      "connect",
+      joinRoom
     );
-  }, [currentUser?.id]);
-
-  // =====================================
-  // MESSAGE SOUND
-  // =====================================
-
-  useEffect(() => {
-    messageSound.current =
-      new Audio("/sounds/message.mp3");
-
-    messageSound.current.volume = 0.5;
 
     return () => {
-      messageSound.current = null;
+      socket.off(
+        "connect",
+        joinRoom
+      );
     };
-  }, []);
+  }, [currentUser?.id]);
 
-  // =====================================
-  // RECEIVE MESSAGE
-  // =====================================
+  // ==================================================
+  // SCROLL
+  // ==================================================
 
-  useEffect(() => {
-    const handleReceiveMessage = (
-      data
-    ) => {
-      if (
-        Number(data.senderId) !==
-        Number(selectedUser?.id)
-      ) {
+  const scrollToBottom =
+    (smooth = true) => {
+      if (!messagesEndRef.current) {
         return;
       }
 
-      const newMessage = {
-        id: `socket-${Date.now()}-${Math.random()}`,
-        message: data.message,
-        sender_id: data.senderId,
-        created_at:
-          new Date().toISOString(),
-      };
-
-      setMessages((previous) => [
-        ...previous,
-        newMessage,
-      ]);
-
-      if (messageSound.current) {
-        messageSound.current
-          .play()
-          .catch(() => {});
-      }
+      messagesEndRef.current.scrollIntoView(
+        {
+          behavior: smooth
+            ? "smooth"
+            : "auto",
+          block: "end",
+        }
+      );
     };
+
+  useEffect(() => {
+    if (!messages.length) {
+      return;
+    }
+
+    setTimeout(() => {
+      scrollToBottom(true);
+    }, 50);
+  }, [messages]);
+
+  // ==================================================
+  // RECEIVE MESSAGE
+  // ==================================================
+
+  useEffect(() => {
+    const handleReceiveMessage =
+      (data) => {
+        if (
+          Number(data.senderId) ===
+          Number(currentUser?.id)
+        ) {
+          return;
+        }
+
+        if (
+          Number(data.senderId) !==
+          Number(selectedUser?.id)
+        ) {
+          return;
+        }
+
+        const newMessage = {
+          id:
+            `socket-${Date.now()}-${Math.random()}`,
+
+          message:
+            data.message,
+
+          sender_id:
+            data.senderId,
+
+          created_at:
+            new Date().toISOString(),
+        };
+
+        setMessages(
+          (previous) => [
+            ...previous,
+            newMessage,
+          ]
+        );
+
+        playMessageSound();
+
+        setTimeout(() => {
+          scrollToBottom(true);
+        }, 100);
+      };
 
     socket.on(
       "receive_message",
@@ -154,14 +286,22 @@ function ChatWindow({ selectedUser }) {
         handleReceiveMessage
       );
     };
-  }, [selectedUser]);
+  }, [
+    selectedUser?.id,
+    currentUser?.id,
+  ]);
 
-  // =====================================
-  // FETCH MESSAGES
-  // =====================================
+  // ==================================================
+  // LOAD MESSAGES
+  // ==================================================
 
   useEffect(() => {
-    if (!selectedUser || !token) return;
+    if (
+      !selectedUser ||
+      !token
+    ) {
+      return;
+    }
 
     const fetchMessages =
       async () => {
@@ -192,6 +332,11 @@ function ChatWindow({ selectedUser }) {
           setMessages(
             data.messages || []
           );
+
+          setTimeout(() => {
+            scrollToBottom(false);
+          }, 100);
+
         } catch (error) {
           console.error(
             "Messages error:",
@@ -203,137 +348,174 @@ function ChatWindow({ selectedUser }) {
       };
 
     fetchMessages();
-  }, [selectedUser, token]);
+  }, [
+    selectedUser?.id,
+    token,
+  ]);
 
-  // =====================================
-  // AUTO SCROLL
-  // =====================================
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-    });
-  }, [messages]);
-
-  // =====================================
+  // ==================================================
   // SEND MESSAGE
-  // =====================================
+  // ==================================================
 
-  const sendMessage = async (
-    text
-  ) => {
-    if (
-      !text.trim() ||
-      !selectedUser ||
-      !currentUser
-    ) {
-      return;
-    }
+  const sendMessage =
+    async (text) => {
+      if (
+        !text.trim() ||
+        !selectedUser ||
+        !currentUser
+      ) {
+        return;
+      }
 
-    try {
-      const response =
-        await fetch(
-          `${import.meta.env.VITE_API_URL}/api/messages/${selectedUser.id}`,
+      const messageText =
+        text.trim();
+
+      try {
+        const response =
+          await fetch(
+            `${import.meta.env.VITE_API_URL}/api/messages/${selectedUser.id}`,
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+
+                Authorization:
+                  `Bearer ${token}`,
+              },
+
+              body: JSON.stringify({
+                message:
+                  messageText,
+              }),
+            }
+          );
+
+        const data =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message ||
+              "Failed to send message"
+          );
+        }
+
+        setMessages(
+          (previous) => [
+            ...previous,
+            data.message,
+          ]
+        );
+
+        socket.emit(
+          "send_message",
           {
-            method: "POST",
+            senderId:
+              currentUser.id,
 
-            headers: {
-              "Content-Type":
-                "application/json",
+            receiverId:
+              selectedUser.id,
 
-              Authorization:
-                `Bearer ${token}`,
-            },
-
-            body: JSON.stringify({
-              message: text.trim(),
-            }),
+            message:
+              messageText,
           }
         );
 
-      const data =
-        await response.json();
+        setTimeout(() => {
+          scrollToBottom(true);
+        }, 50);
 
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            "Failed to send message"
+      } catch (error) {
+        console.error(
+          "Send message error:",
+          error
         );
       }
+    };
 
-      setMessages((previous) => [
-        ...previous,
-        data.message,
-      ]);
-
-      socket.emit(
-        "send_message",
-        {
-          senderId:
-            currentUser.id,
-
-          receiverId:
-            selectedUser.id,
-
-          message:
-            text.trim(),
-        }
-      );
-    } catch (error) {
-      console.error(
-        "Send message error:",
-        error
-      );
-    }
-  };
-
-  // =====================================
-  // NO USER
-  // =====================================
+  // ==================================================
+  // EMPTY
+  // ==================================================
 
   if (!selectedUser) {
     return (
       <div className="empty-chat">
-        <h2>Select a user</h2>
+        <h2>
+          Select a user
+        </h2>
 
         <p>
-          Choose someone from the
-          sidebar to start chatting.
+          Choose someone from the sidebar
+          to start chatting.
         </p>
       </div>
     );
   }
 
-  // =====================================
-  // ACTIVE CALL CHECK
-  // =====================================
+  const isVoiceCallActive =
+    voiceCallState !== "idle";
 
   const isVideoCallActive =
     videoCallState !== "idle";
 
-  const isVoiceCallActive =
-    voiceCallState !== "idle";
+  // ==================================================
+  // CALL USER OBJECTS
+  // ==================================================
+
+  const voiceCallUser =
+    incomingVoiceCall
+      ? {
+          id:
+            incomingVoiceCall.callerId,
+
+          name:
+            incomingVoiceCall.callerName,
+
+          avatar:
+            incomingVoiceCall.callerAvatar ||
+            `https://i.pravatar.cc/150?u=${incomingVoiceCall.callerId}`,
+        }
+      : selectedUser;
+
+  const videoCallUser =
+    incomingVideoCall
+      ? {
+          id:
+            incomingVideoCall.callerId,
+
+          name:
+            incomingVideoCall.callerName,
+
+          avatar:
+            incomingVideoCall.callerAvatar ||
+            `https://i.pravatar.cc/150?u=${incomingVideoCall.callerId}`,
+        }
+      : selectedUser;
+
+  // ==================================================
+  // UI
+  // ==================================================
 
   return (
     <div className="chat-window">
 
-      {/* ================================= */}
-      {/* REMOTE VOICE AUDIO */}
-      {/* ================================= */}
+      {/* ==========================================
+          VOICE AUDIO
+      ========================================== */}
 
       <audio
         ref={remoteAudio}
         autoPlay
         playsInline
         controls={false}
-        style={{
-          display: "none",
-        }}
+        muted={false}
       />
 
-      {/* ================================= */}
-      {/* HEADER */}
-      {/* ================================= */}
+      {/* ==========================================
+          HEADER
+      ========================================== */}
 
       <div className="chat-header">
 
@@ -344,7 +526,9 @@ function ChatWindow({ selectedUser }) {
               selectedUser.avatar ||
               `https://i.pravatar.cc/150?u=${selectedUser.id}`
             }
-            alt={selectedUser.name}
+            alt={
+              selectedUser.name
+            }
           />
 
           <div>
@@ -364,10 +548,10 @@ function ChatWindow({ selectedUser }) {
 
         <div className="chat-actions">
 
-          {/* VOICE */}
-
           <button
-            onClick={startCall}
+            onClick={
+              startVoiceCall
+            }
             title="Voice call"
             disabled={
               isVoiceCallActive ||
@@ -377,10 +561,10 @@ function ChatWindow({ selectedUser }) {
             <FaPhone />
           </button>
 
-          {/* VIDEO */}
-
           <button
-            onClick={startVideoCall}
+            onClick={
+              startVideoCall
+            }
             title="Video call"
             disabled={
               isVoiceCallActive ||
@@ -394,9 +578,9 @@ function ChatWindow({ selectedUser }) {
 
       </div>
 
-      {/* ================================= */}
-      {/* MESSAGES */}
-      {/* ================================= */}
+      {/* ==========================================
+          MESSAGES
+      ========================================== */}
 
       <div className="messages-container">
 
@@ -406,7 +590,6 @@ function ChatWindow({ selectedUser }) {
           </div>
         ) : messages.length === 0 ? (
           <div className="no-messages">
-
             <p>
               No messages yet.
             </p>
@@ -414,7 +597,6 @@ function ChatWindow({ selectedUser }) {
             <span>
               Start the conversation 👋
             </span>
-
           </div>
         ) : (
           messages.map(
@@ -437,107 +619,113 @@ function ChatWindow({ selectedUser }) {
 
         <div
           ref={messagesEndRef}
+          style={{
+            height: "1px",
+          }}
         />
 
       </div>
 
-      {/* ================================= */}
-      {/* INPUT */}
-      {/* ================================= */}
+      {/* ==========================================
+          MESSAGE INPUT
+      ========================================== */}
 
       <MessageInput
         onSend={sendMessage}
       />
 
-      {/* ================================= */}
-      {/* VOICE CALL */}
-      {/* ================================= */}
+      {/* ==========================================
+          VOICE CALL
+      ========================================== */}
 
-      {voiceCallState !==
-        "idle" && (
+      {isVoiceCallActive && (
         <CallModal
           user={
-            incomingVoiceCall
-              ? {
-                  name:
-                    incomingVoiceCall.callerName,
-
-                  avatar:
-                    `https://i.pravatar.cc/150?u=${incomingVoiceCall.callerId}`,
-                }
-              : selectedUser
+            voiceCallUser
           }
+
           callState={
             voiceCallState
           }
+
           incoming={
             voiceCallState ===
             "incoming"
           }
-          muted={voiceMuted}
+
+          muted={
+            voiceMuted
+          }
+
           onToggleMute={
             toggleVoiceMute
           }
+
           onAccept={
-            acceptCall
+            acceptVoiceCall
           }
+
           onReject={
-            rejectCall
+            rejectVoiceCall
           }
+
           onClose={
-            endCall
+            endVoiceCall
           }
         />
       )}
 
-      {/* ================================= */}
-      {/* VIDEO CALL */}
-      {/* ================================= */}
+      {/* ==========================================
+          VIDEO CALL
+      ========================================== */}
 
-      {videoCallState !==
-        "idle" && (
+      {isVideoCallActive && (
         <VideoCall
           user={
-            incomingVideoCall
-              ? {
-                  id:
-                    incomingVideoCall.callerId,
-
-                  name:
-                    incomingVideoCall.callerName,
-
-                  avatar:
-                    `https://i.pravatar.cc/150?u=${incomingVideoCall.callerId}`,
-                }
-              : selectedUser
+            videoCallUser
           }
+
           callState={
             videoCallState
           }
+
           incoming={
             videoCallState ===
             "incoming"
           }
-          localStream={
-            localStream
+
+          muted={
+            videoMuted
           }
-          remoteStream={
-            remoteStream
+
+          camera={
+            camera
           }
-          muted={videoMuted}
-          camera={videoCamera}
-          onToggleMute={
-            toggleVideoMute
+
+          remoteVideo={
+            remoteVideo
           }
-          onToggleCamera={
-            toggleCamera
+
+          localVideo={
+            localVideo
           }
+
           onAccept={
             acceptVideoCall
           }
+
           onReject={
             rejectVideoCall
           }
+
+          onToggleMute={
+            toggleVideoMute
+          }
+
+          onToggleCamera={
+            toggleCamera
+          }
+
           onClose={
             endVideoCall
           }

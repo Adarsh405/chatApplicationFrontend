@@ -18,6 +18,7 @@ function CallModal({
   return (
     <div className="call-overlay">
       <div className="call-card">
+
         <div className="call-status">
           {incoming
             ? "Incoming voice call"
@@ -32,21 +33,25 @@ function CallModal({
               user?.avatar ||
               `https://i.pravatar.cc/150?u=${user?.id}`
             }
-            alt={user?.name}
+            alt={user?.name || "User"}
+            className="call-avatar"
           />
         </div>
 
-        <h2>{user?.name}</h2>
+        <h2>
+          {user?.name || "Unknown"}
+        </h2>
 
         <p>
           {incoming
             ? "Someone is calling you"
             : callState === "connected"
-            ? "Voice call"
+            ? "Voice call connected"
             : "Calling..."}
         </p>
 
         <div className="call-controls">
+
           {incoming ? (
             <>
               <button
@@ -96,6 +101,7 @@ function CallModal({
               </button>
             </>
           )}
+
         </div>
       </div>
     </div>
