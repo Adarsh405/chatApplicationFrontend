@@ -14,49 +14,65 @@ function CallModal({
   incoming,
   onAccept,
   onReject,
-  remoteAudio,
 }) {
   return (
     <div className="call-overlay">
+
       <div className="call-card">
 
-        {/* Remote voice audio */}
-        <audio
-          ref={remoteAudio}
-          autoPlay
-          playsInline
-        />
+        {/* =================================
+            CALL STATUS
+        ================================= */}
 
         <div className="call-status">
+
           {incoming
             ? "Incoming voice call"
-            : callState === "connected"
+            : callState ===
+              "connected"
             ? "Connected"
             : "Calling..."}
+
         </div>
+
+        {/* =================================
+            USER AVATAR
+        ================================= */}
 
         <img
           src={user?.avatar}
           alt={user?.name}
         />
 
-        <h2>{user?.name}</h2>
+        <h2>
+          {user?.name}
+        </h2>
 
         <p>
+
           {incoming
             ? "Someone is calling you"
-            : callState === "connected"
+            : callState ===
+              "connected"
             ? "Voice call"
             : "Calling..."}
+
         </p>
+
+        {/* =================================
+            CONTROLS
+        ================================= */}
 
         <div className="call-controls">
 
           {incoming ? (
+
             <>
+
               <button
                 className="accept-call"
                 onClick={onAccept}
+                title="Accept call"
               >
                 <FiPhone />
               </button>
@@ -64,30 +80,55 @@ function CallModal({
               <button
                 className="end-call"
                 onClick={onReject}
+                title="Reject call"
               >
                 <FiPhoneOff />
               </button>
+
             </>
+
           ) : (
+
             <>
+
               <button
-                className={muted ? "active-control" : ""}
-                onClick={onToggleMute}
+                className={
+                  muted
+                    ? "active-control"
+                    : ""
+                }
+                onClick={
+                  onToggleMute
+                }
+                title={
+                  muted
+                    ? "Unmute"
+                    : "Mute"
+                }
               >
-                {muted ? <FiMicOff /> : <FiMic />}
+                {muted ? (
+                  <FiMicOff />
+                ) : (
+                  <FiMic />
+                )}
               </button>
 
               <button
                 className="end-call"
                 onClick={onClose}
+                title="End call"
               >
                 <FiPhoneOff />
               </button>
+
             </>
+
           )}
 
         </div>
+
       </div>
+
     </div>
   );
 }
