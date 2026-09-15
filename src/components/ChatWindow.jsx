@@ -1,232 +1,551 @@
+import { useEffect, useRef, useState } from "react";
 import {
-  FiMic,
-  FiMicOff,
-  FiVideo,
-  FiVideoOff,
-  FiPhoneOff,
-  FiPhone,
-} from "react-icons/fi";
+  FaPhone,
+  FaVideo,
+} from "react-icons/fa";
 
-function VideoCall({
-  user,
-  callState,
-  incoming,
-  muted,
-  camera,
-  remoteVideo,
-  localVideo,
-  onAccept,
-  onReject,
-  onToggleMute,
-  onToggleCamera,
-  onClose,
-}) {
-  const avatar =
-    user?.avatar ||
-    `https://i.pravatar.cc/150?u=${user?.id}`;
+import Message from "./Message";
+import MessageInput from "./MessageInput";
+import CallModal from "./CallModal";
+import VideoCall from "./VideoCall";
 
-  // ========================================
-  // INCOMING VIDEO CALL
-  // ========================================
+import useVoiceCall from "../hooks/useVoiceCall";
+import useVideoCall from "../hooks/useVideoCall";
 
-  if (incoming) {
+import socket from "../socket";
+
+function ChatWindow({ selectedUser }) {
+  const [messages, setMessages] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const messagesEndRef =
+    useRef(null);
+
+  const messageSound =
+    useRef(null);
+
+  const token =
+    localStorage.getItem("token");
+
+  const currentUser = JSON.parse(
+    localStorage.getItem("user")
+  );
+
+  // =====================================
+  // VOICE CALL
+  // =====================================
+
+  const {
+    callState: voiceCallState,
+    incomingCall: incomingVoiceCall,
+    muted: voiceMuted,
+    remoteAudio,
+    startCall,
+    acceptCall,
+    rejectCall,
+    toggleMute: toggleVoiceMute,
+    endCall,
+  } = useVoiceCall(
+    currentUser,
+    selectedUser
+  );
+
+  // =====================================
+  // VIDEO CALL
+  // =====================================
+
+  const {
+    callState: videoCallState,
+    incomingCall: incomingVideoCall,
+
+    muted: videoMuted,
+    camera: videoCamera,
+
+    localStream,
+    remoteStream,
+
+    startVideoCall,
+    acceptVideoCall,
+    rejectVideoCall,
+
+    toggleMute: toggleVideoMute,
+    toggleCamera,
+
+    endVideoCall,
+  } = useVideoCall(
+    currentUser,
+    selectedUser
+  );
+
+  // =====================================
+  // JOIN ROOM
+  // =====================================
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    socket.emit(
+      "join",
+      currentUser.id
+    );
+  }, [currentUser?.id]);
+
+  // =====================================
+  // MESSAGE SOUND
+  // =====================================
+
+  useEffect(() => {
+    messageSound.current =
+      new Audio("/sounds/message.mp3");
+
+    messageSound.current.volume = 0.5;
+
+    return () => {
+      messageSound.current = null;
+    };
+  }, []);
+
+  // =====================================
+  // RECEIVE MESSAGE
+  // =====================================
+
+  useEffect(() => {
+    const handleReceiveMessage = (
+      data
+    ) => {
+      if (
+        Number(data.senderId) !==
+        Number(selectedUser?.id)
+      ) {
+        return;
+      }
+
+      const newMessage = {
+        id: `socket-${Date.now()}-${Math.random()}`,
+        message: data.message,
+        sender_id: data.senderId,
+        created_at:
+          new Date().toISOString(),
+      };
+
+      setMessages((previous) => [
+        ...previous,
+        newMessage,
+      ]);
+
+      if (messageSound.current) {
+        messageSound.current
+          .play()
+          .catch(() => {});
+      }
+    };
+
+    socket.on(
+      "receive_message",
+      handleReceiveMessage
+    );
+
+    return () => {
+      socket.off(
+        "receive_message",
+        handleReceiveMessage
+      );
+    };
+  }, [selectedUser]);
+
+  // =====================================
+  // FETCH MESSAGES
+  // =====================================
+
+  useEffect(() => {
+    if (!selectedUser || !token) return;
+
+    const fetchMessages =
+      async () => {
+        try {
+          setLoading(true);
+
+          const response =
+            await fetch(
+              `${import.meta.env.VITE_API_URL}/api/messages/${selectedUser.id}`,
+              {
+                headers: {
+                  Authorization:
+                    `Bearer ${token}`,
+                },
+              }
+            );
+
+          const data =
+            await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              data.message ||
+                "Failed to load messages"
+            );
+          }
+
+          setMessages(
+            data.messages || []
+          );
+        } catch (error) {
+          console.error(
+            "Messages error:",
+            error
+          );
+        } finally {
+          setLoading(false);
+        }
+      };
+
+    fetchMessages();
+  }, [selectedUser, token]);
+
+  // =====================================
+  // AUTO SCROLL
+  // =====================================
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages]);
+
+  // =====================================
+  // SEND MESSAGE
+  // =====================================
+
+  const sendMessage = async (
+    text
+  ) => {
+    if (
+      !text.trim() ||
+      !selectedUser ||
+      !currentUser
+    ) {
+      return;
+    }
+
+    try {
+      const response =
+        await fetch(
+          `${import.meta.env.VITE_API_URL}/api/messages/${selectedUser.id}`,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+
+              Authorization:
+                `Bearer ${token}`,
+            },
+
+            body: JSON.stringify({
+              message: text.trim(),
+            }),
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "Failed to send message"
+        );
+      }
+
+      setMessages((previous) => [
+        ...previous,
+        data.message,
+      ]);
+
+      socket.emit(
+        "send_message",
+        {
+          senderId:
+            currentUser.id,
+
+          receiverId:
+            selectedUser.id,
+
+          message:
+            text.trim(),
+        }
+      );
+    } catch (error) {
+      console.error(
+        "Send message error:",
+        error
+      );
+    }
+  };
+
+  // =====================================
+  // NO USER
+  // =====================================
+
+  if (!selectedUser) {
     return (
-      <div className="video-overlay">
-        <div className="video-incoming-card">
-          <div className="video-incoming-avatar">
-            <div className="incoming-pulse" />
+      <div className="empty-chat">
+        <h2>Select a user</h2>
 
-            <img
-              src={avatar}
-              alt={user?.name}
-            />
-          </div>
-
-          <div className="video-incoming-label">
-            Incoming video call
-          </div>
-
-          <h2>{user?.name}</h2>
-
-          <p>
-            wants to start a video call
-          </p>
-
-          <div className="video-incoming-actions">
-            <button
-              className="video-accept"
-              onClick={onAccept}
-              title="Accept video call"
-            >
-              <FiPhone />
-            </button>
-
-            <button
-              className="video-reject"
-              onClick={onReject}
-              title="Reject video call"
-            >
-              <FiPhoneOff />
-            </button>
-          </div>
-        </div>
+        <p>
+          Choose someone from the
+          sidebar to start chatting.
+        </p>
       </div>
     );
   }
 
-  // ========================================
-  // ACTIVE VIDEO CALL
-  // ========================================
+  // =====================================
+  // ACTIVE CALL CHECK
+  // =====================================
+
+  const isVideoCallActive =
+    videoCallState !== "idle";
+
+  const isVoiceCallActive =
+    voiceCallState !== "idle";
 
   return (
-    <div className="video-overlay">
-      <div className="video-call-container">
-        {/* ==================================
-            REMOTE VIDEO
-        ================================== */}
+    <div className="chat-window">
 
-        <video
-          ref={remoteVideo}
-          className="remote-video-element"
-          autoPlay
-          playsInline
-        />
+      {/* ================================= */}
+      {/* REMOTE VOICE AUDIO */}
+      {/* ================================= */}
 
-        {/* ==================================
-            FALLBACK
-        ================================== */}
+      <audio
+        ref={remoteAudio}
+        autoPlay
+        playsInline
+        controls={false}
+        style={{
+          display: "none",
+        }}
+      />
 
-        {callState !== "connected" && (
-          <div className="video-waiting">
-            <div className="video-waiting-avatar">
-              <img
-                src={avatar}
-                alt={user?.name}
-              />
-            </div>
+      {/* ================================= */}
+      {/* HEADER */}
+      {/* ================================= */}
 
-            <h2>{user?.name}</h2>
+      <div className="chat-header">
 
-            <p>
-              {callState === "calling"
-                ? "Calling..."
-                : "Connecting..."}
-            </p>
+        <div className="chat-user-info">
 
-            <div className="video-loading-dots">
-              <span />
-              <span />
-              <span />
-            </div>
-          </div>
-        )}
-
-        {/* ==================================
-            USER NAME
-        ================================== */}
-
-        <div className="remote-user-name">
-          <span className="online-dot" />
-          {user?.name}
-        </div>
-
-        {/* ==================================
-            LOCAL VIDEO
-        ================================== */}
-
-        <div className="local-video-container">
-          <video
-            ref={localVideo}
-            className="local-video-element"
-            autoPlay
-            muted
-            playsInline
+          <img
+            src={
+              selectedUser.avatar ||
+              `https://i.pravatar.cc/150?u=${selectedUser.id}`
+            }
+            alt={selectedUser.name}
           />
 
-          {!camera && (
-            <div className="camera-off-overlay">
-              <FiVideoOff />
-              <span>Camera off</span>
-            </div>
-          )}
+          <div>
+            <h3>
+              {selectedUser.name}
+            </h3>
 
-          <span className="you-label">
-            You
-          </span>
+            <span>
+              {selectedUser.status ===
+              "online"
+                ? "Online"
+                : "Offline"}
+            </span>
+          </div>
+
         </div>
 
-        {/* ==================================
-            CALL STATE
-        ================================== */}
+        <div className="chat-actions">
 
-        <div className="video-call-state">
-          {callState === "calling" &&
-            "Calling..."}
+          {/* VOICE */}
 
-          {callState === "connected" &&
-            "Connected"}
+          <button
+            onClick={startCall}
+            title="Voice call"
+            disabled={
+              isVoiceCallActive ||
+              isVideoCallActive
+            }
+          >
+            <FaPhone />
+          </button>
 
-          {callState !== "calling" &&
-            callState !== "connected" &&
-            "Connecting..."}
+          {/* VIDEO */}
+
+          <button
+            onClick={startVideoCall}
+            title="Video call"
+            disabled={
+              isVoiceCallActive ||
+              isVideoCallActive
+            }
+          >
+            <FaVideo />
+          </button>
+
         </div>
 
-        {/* ==================================
-            CONTROLS
-        ================================== */}
-
-        <div className="video-controls">
-          <button
-            className={
-              muted
-                ? "video-control active"
-                : "video-control"
-            }
-            onClick={onToggleMute}
-            title={
-              muted
-                ? "Unmute"
-                : "Mute"
-            }
-          >
-            {muted ? (
-              <FiMicOff />
-            ) : (
-              <FiMic />
-            )}
-          </button>
-
-          <button
-            className={
-              !camera
-                ? "video-control active"
-                : "video-control"
-            }
-            onClick={onToggleCamera}
-            title={
-              camera
-                ? "Turn camera off"
-                : "Turn camera on"
-            }
-          >
-            {camera ? (
-              <FiVideo />
-            ) : (
-              <FiVideoOff />
-            )}
-          </button>
-
-          <button
-            className="video-end-call"
-            onClick={onClose}
-            title="End call"
-          >
-            <FiPhoneOff />
-          </button>
-        </div>
       </div>
+
+      {/* ================================= */}
+      {/* MESSAGES */}
+      {/* ================================= */}
+
+      <div className="messages-container">
+
+        {loading ? (
+          <div className="messages-loading">
+            Loading messages...
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="no-messages">
+
+            <p>
+              No messages yet.
+            </p>
+
+            <span>
+              Start the conversation 👋
+            </span>
+
+          </div>
+        ) : (
+          messages.map(
+            (message) => (
+              <Message
+                key={message.id}
+                message={message}
+                isOwn={
+                  Number(
+                    message.sender_id
+                  ) ===
+                  Number(
+                    currentUser.id
+                  )
+                }
+              />
+            )
+          )
+        )}
+
+        <div
+          ref={messagesEndRef}
+        />
+
+      </div>
+
+      {/* ================================= */}
+      {/* INPUT */}
+      {/* ================================= */}
+
+      <MessageInput
+        onSend={sendMessage}
+      />
+
+      {/* ================================= */}
+      {/* VOICE CALL */}
+      {/* ================================= */}
+
+      {voiceCallState !==
+        "idle" && (
+        <CallModal
+          user={
+            incomingVoiceCall
+              ? {
+                  name:
+                    incomingVoiceCall.callerName,
+
+                  avatar:
+                    `https://i.pravatar.cc/150?u=${incomingVoiceCall.callerId}`,
+                }
+              : selectedUser
+          }
+          callState={
+            voiceCallState
+          }
+          incoming={
+            voiceCallState ===
+            "incoming"
+          }
+          muted={voiceMuted}
+          onToggleMute={
+            toggleVoiceMute
+          }
+          onAccept={
+            acceptCall
+          }
+          onReject={
+            rejectCall
+          }
+          onClose={
+            endCall
+          }
+        />
+      )}
+
+      {/* ================================= */}
+      {/* VIDEO CALL */}
+      {/* ================================= */}
+
+      {videoCallState !==
+        "idle" && (
+        <VideoCall
+          user={
+            incomingVideoCall
+              ? {
+                  id:
+                    incomingVideoCall.callerId,
+
+                  name:
+                    incomingVideoCall.callerName,
+
+                  avatar:
+                    `https://i.pravatar.cc/150?u=${incomingVideoCall.callerId}`,
+                }
+              : selectedUser
+          }
+          callState={
+            videoCallState
+          }
+          incoming={
+            videoCallState ===
+            "incoming"
+          }
+          localStream={
+            localStream
+          }
+          remoteStream={
+            remoteStream
+          }
+          muted={videoMuted}
+          camera={videoCamera}
+          onToggleMute={
+            toggleVideoMute
+          }
+          onToggleCamera={
+            toggleCamera
+          }
+          onAccept={
+            acceptVideoCall
+          }
+          onReject={
+            rejectVideoCall
+          }
+          onClose={
+            endVideoCall
+          }
+        />
+      )}
+
     </div>
   );
 }
 
-export default VideoCall;
+export default ChatWindow;

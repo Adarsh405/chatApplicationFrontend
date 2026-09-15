@@ -15,44 +15,75 @@ function CallModal({
   onAccept,
   onReject,
 }) {
-  const avatar =
-    user?.avatar ||
-    `https://i.pravatar.cc/150?u=${user?.id}`;
-
   return (
     <div className="call-overlay">
-      <div className="call-card">
-        <div className="call-pulse">
-          <div className="call-ring ring-one" />
-          <div className="call-ring ring-two" />
 
-          <img
-            src={avatar}
-            alt={user?.name}
-          />
-        </div>
+      <div className="call-card">
+
+        {/* ============================= */}
+        {/* STATUS */}
+        {/* ============================= */}
 
         <div className="call-status">
+
           {incoming
             ? "Incoming voice call"
             : callState === "connected"
             ? "Connected"
             : "Calling..."}
+
         </div>
 
-        <h2>{user?.name}</h2>
+        {/* ============================= */}
+        {/* AVATAR */}
+        {/* ============================= */}
+
+        <div className="call-avatar-wrapper">
+
+          <div className="call-avatar-ring"></div>
+
+          <img
+            src={
+              user?.avatar ||
+              `https://i.pravatar.cc/150?u=${user?.id}`
+            }
+            alt={user?.name}
+          />
+
+        </div>
+
+        {/* ============================= */}
+        {/* NAME */}
+        {/* ============================= */}
+
+        <h2>
+          {user?.name}
+        </h2>
+
+        {/* ============================= */}
+        {/* DESCRIPTION */}
+        {/* ============================= */}
 
         <p>
+
           {incoming
             ? "Someone is calling you"
             : callState === "connected"
-            ? "Voice call connected"
+            ? "Voice call"
             : "Calling..."}
+
         </p>
 
+        {/* ============================= */}
+        {/* CONTROLS */}
+        {/* ============================= */}
+
         <div className="call-controls">
+
           {incoming ? (
             <>
+              {/* ACCEPT */}
+
               <button
                 className="accept-call"
                 onClick={onAccept}
@@ -60,6 +91,8 @@ function CallModal({
               >
                 <FiPhone />
               </button>
+
+              {/* REJECT */}
 
               <button
                 className="end-call"
@@ -71,13 +104,17 @@ function CallModal({
             </>
           ) : (
             <>
+              {/* MUTE */}
+
               <button
                 className={
                   muted
                     ? "active-control"
                     : ""
                 }
-                onClick={onToggleMute}
+                onClick={
+                  onToggleMute
+                }
                 title={
                   muted
                     ? "Unmute"
@@ -91,6 +128,8 @@ function CallModal({
                 )}
               </button>
 
+              {/* END */}
+
               <button
                 className="end-call"
                 onClick={onClose}
@@ -100,8 +139,11 @@ function CallModal({
               </button>
             </>
           )}
+
         </div>
+
       </div>
+
     </div>
   );
 }
