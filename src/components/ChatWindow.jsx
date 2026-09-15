@@ -1,5 +1,13 @@
-import { useEffect, useRef, useState } from "react";
-import { FaPhone, FaVideo } from "react-icons/fa";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  FaPhone,
+  FaVideo,
+} from "react-icons/fa";
 
 import Message from "./Message";
 import MessageInput from "./MessageInput";
@@ -7,73 +15,157 @@ import CallModal from "./CallModal";
 import VideoCall from "./VideoCall";
 
 import useVoiceCall from "../hooks/useVoiceCall";
+import useVideoCall from "../hooks/useVideoCall";
+
 import socket from "../socket";
 
-function ChatWindow({ selectedUser }) {
-  const [messages, setMessages] = useState([]);
-  const [videoCall, setVideoCall] = useState(false);
-  const [loading, setLoading] = useState(false);
+function ChatWindow({
+  selectedUser,
+}) {
+  const [messages, setMessages] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(false);
 
   // =================================
-  // AUTO SCROLL REF
+  // MESSAGE SCROLL
   // =================================
 
-  const messagesEndRef = useRef(null);
+  const messagesEndRef =
+    useRef(null);
 
   // =================================
-  // MESSAGE NOTIFICATION SOUND
+  // MESSAGE SOUND
   // =================================
 
-  const messageSound = useRef(null);
+  const messageSound =
+    useRef(null);
 
   useEffect(() => {
-    messageSound.current = new Audio(
-      "/sounds/message.mp3"
-    );
+    messageSound.current =
+      new Audio(
+        "/sounds/message.mp3"
+      );
 
-    messageSound.current.volume = 0.7;
+    messageSound.current.volume =
+      0.7;
+
+    return () => {
+      if (messageSound.current) {
+        messageSound.current.pause();
+
+        messageSound.current = null;
+      }
+    };
   }, []);
 
-  const playMessageSound = () => {
-    if (!messageSound.current) return;
+  const playMessageSound =
+    () => {
+      if (!messageSound.current)
+        return;
 
-    messageSound.current.currentTime = 0;
+      messageSound.current.currentTime =
+        0;
 
-    messageSound.current
-      .play()
-      .catch((error) => {
-        console.log(
-          "Message notification blocked:",
-          error
-        );
-      });
-  };
+      messageSound.current
+        .play()
+        .catch((error) => {
+          console.log(
+            "Message sound blocked:",
+            error
+          );
+        });
+    };
 
   // =================================
-  // CURRENT USER
+  // USER
   // =================================
 
-  const token = localStorage.getItem("token");
+  const token =
+    localStorage.getItem(
+      "token"
+    );
 
-  const currentUser = JSON.parse(
-    localStorage.getItem("user")
-  );
+  const currentUser =
+    JSON.parse(
+      localStorage.getItem(
+        "user"
+      )
+    );
 
   // =================================
   // VOICE CALL
   // =================================
 
   const {
-    callState,
-    incomingCall,
-    muted,
+    callState:
+      voiceCallState,
+
+    incomingCall:
+      incomingVoiceCall,
+
+    muted:
+      voiceMuted,
+
     remoteAudio,
-    startCall,
-    acceptCall,
-    rejectCall,
-    toggleMute,
-    endCall,
+
+    startCall:
+      startVoiceCall,
+
+    acceptCall:
+      acceptVoiceCall,
+
+    rejectCall:
+      rejectVoiceCall,
+
+    toggleMute:
+      toggleVoiceMute,
+
+    endCall:
+      endVoiceCall,
   } = useVoiceCall(
+    currentUser,
+    selectedUser
+  );
+
+  // =================================
+  // VIDEO CALL
+  // =================================
+
+  const {
+    callState:
+      videoCallState,
+
+    incomingCall:
+      incomingVideoCall,
+
+    muted:
+      videoMuted,
+
+    camera,
+
+    remoteVideo,
+
+    localVideo,
+
+    startCall:
+      startVideoCall,
+
+    acceptCall:
+      acceptVideoCall,
+
+    rejectCall:
+      rejectVideoCall,
+
+    toggleMute:
+      toggleVideoMute,
+
+    toggleCamera,
+
+    endCall:
+      endVideoCall,
+  } = useVideoCall(
     currentUser,
     selectedUser
   );
@@ -83,7 +175,8 @@ function ChatWindow({ selectedUser }) {
   // =================================
 
   useEffect(() => {
-    if (!currentUser?.id) return;
+    if (!currentUser?.id)
+      return;
 
     socket.emit(
       "join",
@@ -97,89 +190,102 @@ function ChatWindow({ selectedUser }) {
   }, [currentUser?.id]);
 
   // =================================
-  // AUTO SCROLL FUNCTION
+  // AUTO SCROLL
   // =================================
 
-  const scrollToBottom = (
-    smooth = true
-  ) => {
-    if (!messagesEndRef.current) return;
+  const scrollToBottom =
+    (smooth = true) => {
+      if (
+        !messagesEndRef.current
+      ) {
+        return;
+      }
 
-    messagesEndRef.current.scrollIntoView({
-      behavior: smooth
-        ? "smooth"
-        : "auto",
-      block: "end",
-    });
-  };
+      messagesEndRef.current.scrollIntoView(
+        {
+          behavior: smooth
+            ? "smooth"
+            : "auto",
 
-  // =================================
-  // AUTO SCROLL WHEN MESSAGES CHANGE
-  // =================================
+          block: "end",
+        }
+      );
+    };
 
   useEffect(() => {
-    if (messages.length === 0) return;
+    if (
+      messages.length === 0
+    ) {
+      return;
+    }
 
-    // Small delay allows DOM to update first
     setTimeout(() => {
       scrollToBottom(true);
     }, 50);
   }, [messages]);
 
   // =================================
-  // RECEIVE REAL-TIME MESSAGE
+  // RECEIVE MESSAGE
   // =================================
 
   useEffect(() => {
-    const handleReceiveMessage = (data) => {
-      console.log(
-        "Received message:",
-        data
-      );
+    const handleReceiveMessage =
+      (data) => {
+        console.log(
+          "Received message:",
+          data
+        );
 
-      // Ignore messages from current user
-      if (
-        Number(data.senderId) ===
-        Number(currentUser?.id)
-      ) {
-        return;
-      }
+        // Ignore own messages
+        if (
+          Number(
+            data.senderId
+          ) ===
+          Number(
+            currentUser?.id
+          )
+        ) {
+          return;
+        }
 
-      // Only add message to currently
-      // selected conversation
-      if (
-        Number(data.senderId) !==
-        Number(selectedUser?.id)
-      ) {
-        return;
-      }
+        // Only selected conversation
+        if (
+          Number(
+            data.senderId
+          ) !==
+          Number(
+            selectedUser?.id
+          )
+        ) {
+          return;
+        }
 
-      const newMessage = {
-        id: `socket-${Date.now()}-${Math.random()}`,
+        const newMessage = {
+          id: `socket-${Date.now()}-${Math.random()}`,
 
-        message:
-          data.message,
+          message:
+            data.message,
 
-        sender_id:
-          data.senderId,
+          sender_id:
+            data.senderId,
 
-        created_at:
-          new Date().toISOString(),
+          created_at:
+            new Date().toISOString(),
+        };
+
+        setMessages(
+          (previous) => [
+            ...previous,
+            newMessage,
+          ]
+        );
+
+        playMessageSound();
+
+        setTimeout(() => {
+          scrollToBottom(true);
+        }, 100);
       };
-
-      setMessages((prev) => [
-        ...prev,
-        newMessage,
-      ]);
-
-      // Play notification
-      playMessageSound();
-
-      // Scroll to new message
-      setTimeout(() => {
-        scrollToBottom(true);
-      }, 100);
-    };
 
     socket.on(
       "receive_message",
@@ -202,50 +308,55 @@ function ChatWindow({ selectedUser }) {
   // =================================
 
   useEffect(() => {
-    if (!selectedUser || !token) return;
+    if (
+      !selectedUser ||
+      !token
+    ) {
+      return;
+    }
 
-    const fetchMessages = async () => {
-      try {
-        setLoading(true);
+    const fetchMessages =
+      async () => {
+        try {
+          setLoading(true);
 
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/messages/${selectedUser.id}`,
-          {
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-            },
+          const response =
+            await fetch(
+              `${import.meta.env.VITE_API_URL}/api/messages/${selectedUser.id}`,
+              {
+                headers: {
+                  Authorization:
+                    `Bearer ${token}`,
+                },
+              }
+            );
+
+          const data =
+            await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              data.message ||
+                "Failed to load messages"
+            );
           }
-        );
 
-        const data =
-          await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.message ||
-              "Failed to load messages"
+          setMessages(
+            data.messages || []
           );
+
+          setTimeout(() => {
+            scrollToBottom(false);
+          }, 100);
+        } catch (error) {
+          console.error(
+            "Messages error:",
+            error
+          );
+        } finally {
+          setLoading(false);
         }
-
-        setMessages(
-          data.messages || []
-        );
-
-        // Scroll after loading old messages
-        setTimeout(() => {
-          scrollToBottom(false);
-        }, 100);
-
-      } catch (error) {
-        console.error(
-          "Messages error:",
-          error
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
 
     fetchMessages();
   }, [
@@ -257,94 +368,85 @@ function ChatWindow({ selectedUser }) {
   // SEND MESSAGE
   // =================================
 
-  const sendMessage = async (text) => {
-    if (
-      !text.trim() ||
-      !selectedUser ||
-      !currentUser
-    ) {
-      return;
-    }
-
-    const messageText =
-      text.trim();
-
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/messages/${selectedUser.id}`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-
-            Authorization:
-              `Bearer ${token}`,
-          },
-
-          body: JSON.stringify({
-            message:
-              messageText,
-          }),
-        }
-      );
-
-      const data =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            "Failed to send message"
-        );
+  const sendMessage =
+    async (text) => {
+      if (
+        !text.trim() ||
+        !selectedUser ||
+        !currentUser
+      ) {
+        return;
       }
 
-      // =================================
-      // ADD MESSAGE TO OWN SCREEN
-      // =================================
+      const messageText =
+        text.trim();
 
-      setMessages((prev) => [
-        ...prev,
-        data.message,
-      ]);
+      try {
+        const response =
+          await fetch(
+            `${import.meta.env.VITE_API_URL}/api/messages/${selectedUser.id}`,
+            {
+              method: "POST",
 
-      // =================================
-      // SOCKET MESSAGE
-      // =================================
+              headers: {
+                "Content-Type":
+                  "application/json",
 
-      socket.emit(
-        "send_message",
-        {
-          senderId:
-            currentUser.id,
+                Authorization:
+                  `Bearer ${token}`,
+              },
 
-          receiverId:
-            selectedUser.id,
+              body: JSON.stringify({
+                message:
+                  messageText,
+              }),
+            }
+          );
 
-          message:
-            messageText,
+        const data =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message ||
+              "Failed to send message"
+          );
         }
-      );
 
-      // =================================
-      // SCROLL IMMEDIATELY
-      // =================================
+        setMessages(
+          (previous) => [
+            ...previous,
+            data.message,
+          ]
+        );
 
-      setTimeout(() => {
-        scrollToBottom(true);
-      }, 50);
+        socket.emit(
+          "send_message",
+          {
+            senderId:
+              currentUser.id,
 
-    } catch (error) {
-      console.error(
-        "Send message error:",
-        error
-      );
-    }
-  };
+            receiverId:
+              selectedUser.id,
+
+            message:
+              messageText,
+          }
+        );
+
+        setTimeout(() => {
+          scrollToBottom(true);
+        }, 50);
+      } catch (error) {
+        console.error(
+          "Send message error:",
+          error
+        );
+      }
+    };
 
   // =================================
-  // NO USER SELECTED
+  // NO USER
   // =================================
 
   if (!selectedUser) {
@@ -365,14 +467,22 @@ function ChatWindow({ selectedUser }) {
   }
 
   // =================================
-  // CHAT UI
+  // DETERMINE ACTIVE CALL
   // =================================
+
+  const isVoiceCallActive =
+    voiceCallState !==
+    "idle";
+
+  const isVideoCallActive =
+    videoCallState !==
+    "idle";
 
   return (
     <div className="chat-window">
 
       {/* =================================
-          PERSISTENT REMOTE AUDIO
+          PERSISTENT VOICE AUDIO
       ================================= */}
 
       <audio
@@ -397,7 +507,9 @@ function ChatWindow({ selectedUser }) {
               selectedUser.avatar ||
               `https://i.pravatar.cc/150?u=${selectedUser.id}`
             }
-            alt={selectedUser.name}
+            alt={
+              selectedUser.name
+            }
           />
 
           <div>
@@ -423,25 +535,32 @@ function ChatWindow({ selectedUser }) {
 
         <div className="chat-actions">
 
-          {/* VOICE CALL */}
+          {/* VOICE */}
 
           <button
-            onClick={startCall}
+            onClick={
+              startVoiceCall
+            }
             title="Voice call"
             disabled={
-              callState !== "idle"
+              isVoiceCallActive ||
+              isVideoCallActive
             }
           >
             <FaPhone />
           </button>
 
-          {/* VIDEO CALL */}
+          {/* VIDEO */}
 
           <button
-            onClick={() =>
-              setVideoCall(true)
+            onClick={
+              startVideoCall
             }
             title="Video call"
+            disabled={
+              isVoiceCallActive ||
+              isVideoCallActive
+            }
           >
             <FaVideo />
           </button>
@@ -460,9 +579,8 @@ function ChatWindow({ selectedUser }) {
           <div className="messages-loading">
             Loading messages...
           </div>
-
-        ) : messages.length === 0 ? (
-
+        ) : messages.length ===
+          0 ? (
           <div className="no-messages">
 
             <p>
@@ -474,34 +592,35 @@ function ChatWindow({ selectedUser }) {
             </span>
 
           </div>
-
         ) : (
-
-          messages.map((message) => (
-
-            <Message
-              key={message.id}
-              message={message}
-              isOwn={
-                Number(
-                  message.sender_id
-                ) ===
-                Number(
-                  currentUser.id
-                )
-              }
-            />
-
-          ))
-
+          messages.map(
+            (message) => (
+              <Message
+                key={
+                  message.id
+                }
+                message={
+                  message
+                }
+                isOwn={
+                  Number(
+                    message.sender_id
+                  ) ===
+                  Number(
+                    currentUser.id
+                  )
+                }
+              />
+            )
+          )
         )}
 
-        {/* =================================
-            IMPORTANT SCROLL TARGET
-        ================================= */}
+        {/* SCROLL TARGET */}
 
         <div
-          ref={messagesEndRef}
+          ref={
+            messagesEndRef
+          }
           style={{
             height: "1px",
           }}
@@ -514,75 +633,129 @@ function ChatWindow({ selectedUser }) {
       ================================= */}
 
       <MessageInput
-        onSend={sendMessage}
+        onSend={
+          sendMessage
+        }
       />
 
       {/* =================================
           VOICE CALL
       ================================= */}
 
-      {callState !== "idle" && (
-
+      {isVoiceCallActive && (
         <CallModal
           user={
-            incomingCall
+            incomingVoiceCall
               ? {
+                  id:
+                    incomingVoiceCall.callerId,
+
                   name:
-                    incomingCall.callerName,
+                    incomingVoiceCall.callerName,
 
                   avatar:
-                    `https://i.pravatar.cc/150?u=${incomingCall.callerId}`,
+                    `https://i.pravatar.cc/150?u=${incomingVoiceCall.callerId}`,
                 }
               : selectedUser
           }
 
           callState={
-            callState
+            voiceCallState
           }
 
           incoming={
-            callState === "incoming"
+            voiceCallState ===
+            "incoming"
           }
 
-          muted={muted}
+          muted={
+            voiceMuted
+          }
 
           onToggleMute={
-            toggleMute
+            toggleVoiceMute
           }
 
           onAccept={
-            acceptCall
+            acceptVoiceCall
           }
 
           onReject={
-            rejectCall
+            rejectVoiceCall
           }
 
           onClose={
-            endCall
-          }
-
-          remoteAudio={
-            remoteAudio
+            endVoiceCall
           }
         />
-
       )}
 
       {/* =================================
           VIDEO CALL
       ================================= */}
 
-      {videoCall && (
-
+      {isVideoCallActive && (
         <VideoCall
-          user={selectedUser}
+          user={
+            incomingVideoCall
+              ? {
+                  id:
+                    incomingVideoCall.callerId,
 
-          onClose={() =>
-            setVideoCall(false)
+                  name:
+                    incomingVideoCall.callerName,
+
+                  avatar:
+                    `https://i.pravatar.cc/150?u=${incomingVideoCall.callerId}`,
+                }
+              : selectedUser
+          }
+
+          callState={
+            videoCallState
+          }
+
+          incoming={
+            videoCallState ===
+            "incoming"
+          }
+
+          muted={
+            videoMuted
+          }
+
+          camera={
+            camera
+          }
+
+          remoteVideo={
+            remoteVideo
+          }
+
+          localVideo={
+            localVideo
+          }
+
+          onAccept={
+            acceptVideoCall
+          }
+
+          onReject={
+            rejectVideoCall
+          }
+
+          onToggleMute={
+            toggleVideoMute
+          }
+
+          onToggleCamera={
+            toggleCamera
+          }
+
+          onClose={
+            endVideoCall
           }
         />
-
       )}
 
     </div>

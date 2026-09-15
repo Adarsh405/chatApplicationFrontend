@@ -4,68 +4,177 @@ import {
   FiVideo,
   FiVideoOff,
   FiPhoneOff,
+  FiPhone,
 } from "react-icons/fi";
-
-import { useState } from "react";
 
 function VideoCall({
   user,
+  callState,
+  incoming,
+  muted,
+  camera,
+  remoteVideo,
+  localVideo,
+  onAccept,
+  onReject,
+  onToggleMute,
+  onToggleCamera,
   onClose,
 }) {
-  const [muted, setMuted] =
-    useState(false);
-
-  const [camera, setCamera] =
-    useState(true);
-
   return (
-    <div className="video-overlay">
+    <div className="video-call-overlay">
 
-      <div className="remote-video">
+      {/* =================================
+          REMOTE VIDEO
+      ================================= */}
 
-        {/* =================================
-            REMOTE USER
-        ================================= */}
+      <video
+        ref={remoteVideo}
+        className="remote-video"
+        autoPlay
+        playsInline
+      />
 
-        <img
-          src={
-            user?.avatar ||
-            `https://i.pravatar.cc/150?u=${user?.id}`
-          }
-          alt={user?.name}
-        />
+      {/* =================================
+          FALLBACK / CALLING BACKGROUND
+      ================================= */}
 
-        <div className="video-name">
-          {user?.name}
+      {callState !== "connected" && (
+        <div className="video-waiting-screen">
+
+          <div className="video-ring-container">
+
+            <div className="video-ring ring-one" />
+            <div className="video-ring ring-two" />
+            <div className="video-ring ring-three" />
+
+            <img
+              src={
+                user?.avatar ||
+                `https://i.pravatar.cc/150?u=${user?.id}`
+              }
+              alt={user?.name}
+            />
+
+          </div>
+
+          <h2>
+            {user?.name}
+          </h2>
+
+          <p>
+            {incoming
+              ? "Incoming video call"
+              : "Calling..."}
+          </p>
+
+          {!incoming && (
+            <div className="calling-dots">
+              <span />
+              <span />
+              <span />
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* =================================
+          USER INFORMATION
+      ================================= */}
+
+      <div className="video-user-info">
+
+        <div className="video-status-dot" />
+
+        <div>
+          <h3>
+            {user?.name}
+          </h3>
+
+          <p>
+            {incoming
+              ? "Incoming video call"
+              : callState === "connected"
+              ? "Connected"
+              : "Calling..."}
+          </p>
         </div>
 
-        {/* =================================
-            YOUR VIDEO
-        ================================= */}
+      </div>
 
-        <div className="self-video">
+      {/* =================================
+          LOCAL VIDEO
+      ================================= */}
 
-          <div>
-            You
+      <div className="local-video-wrapper">
+
+        <video
+          ref={localVideo}
+          className="local-video"
+          autoPlay
+          muted
+          playsInline
+        />
+
+        {!camera && (
+          <div className="camera-off-overlay">
+            <FiVideoOff />
+            <span>Camera off</span>
+          </div>
+        )}
+
+        <div className="you-label">
+          You
+        </div>
+
+      </div>
+
+      {/* =================================
+          INCOMING CALL
+      ================================= */}
+
+      {incoming ? (
+        <div className="video-incoming-controls">
+
+          <div className="incoming-label">
+            <span className="incoming-pulse" />
+            Incoming call
+          </div>
+
+          <div className="incoming-buttons">
+
+            <button
+              className="accept-call"
+              onClick={onAccept}
+              title="Accept video call"
+            >
+              <FiPhone />
+            </button>
+
+            <button
+              className="end-call"
+              onClick={onReject}
+              title="Reject video call"
+            >
+              <FiPhoneOff />
+            </button>
+
           </div>
 
         </div>
-
-        {/* =================================
-            CONTROLS
-        ================================= */}
-
+      ) : (
         <div className="video-controls">
 
-          {/* MIC */}
+          {/* MUTE */}
 
           <button
-            onClick={() =>
-              setMuted(
-                (previous) =>
-                  !previous
-              )
+            className={
+              muted
+                ? "active-control"
+                : ""
             }
+            onClick={onToggleMute}
             title={
               muted
                 ? "Unmute"
@@ -82,12 +191,12 @@ function VideoCall({
           {/* CAMERA */}
 
           <button
-            onClick={() =>
-              setCamera(
-                (previous) =>
-                  !previous
-              )
+            className={
+              !camera
+                ? "active-control"
+                : ""
             }
+            onClick={onToggleCamera}
             title={
               camera
                 ? "Turn camera off"
@@ -112,8 +221,7 @@ function VideoCall({
           </button>
 
         </div>
-
-      </div>
+      )}
 
     </div>
   );

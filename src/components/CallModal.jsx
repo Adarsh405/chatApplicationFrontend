@@ -18,46 +18,92 @@ function CallModal({
   return (
     <div className="call-overlay">
 
-      <div className="call-card">
+      <div
+        className={`call-card ${
+          incoming
+            ? "incoming-call-card"
+            : ""
+        }`}
+      >
 
         {/* =================================
-            CALL STATUS
+            ANIMATED RINGS
+        ================================= */}
+
+        <div className="call-rings">
+
+          <span />
+          <span />
+          <span />
+
+        </div>
+
+        {/* =================================
+            STATUS
         ================================= */}
 
         <div className="call-status">
 
+          <span className="status-dot" />
+
           {incoming
             ? "Incoming voice call"
-            : callState ===
-              "connected"
+            : callState === "connected"
             ? "Connected"
             : "Calling..."}
 
         </div>
 
         {/* =================================
-            USER AVATAR
+            AVATAR
         ================================= */}
 
-        <img
-          src={user?.avatar}
-          alt={user?.name}
-        />
+        <div className="call-avatar-wrapper">
+
+          <div className="avatar-glow" />
+
+          <img
+            src={
+              user?.avatar ||
+              `https://i.pravatar.cc/150?u=${user?.id}`
+            }
+            alt={user?.name}
+          />
+
+        </div>
+
+        {/* =================================
+            USER NAME
+        ================================= */}
 
         <h2>
           {user?.name}
         </h2>
 
-        <p>
+        <p className="call-description">
 
           {incoming
             ? "Someone is calling you"
-            : callState ===
-              "connected"
+            : callState === "connected"
             ? "Voice call"
             : "Calling..."}
 
         </p>
+
+        {/* =================================
+            CALLING DOTS
+        ================================= */}
+
+        {!incoming &&
+          callState !== "connected" && (
+            <div className="calling-dots">
+
+              <span />
+              <span />
+              <span />
+
+            </div>
+          )}
 
         {/* =================================
             CONTROLS
@@ -66,9 +112,7 @@ function CallModal({
         <div className="call-controls">
 
           {incoming ? (
-
             <>
-
               <button
                 className="accept-call"
                 onClick={onAccept}
@@ -84,13 +128,9 @@ function CallModal({
               >
                 <FiPhoneOff />
               </button>
-
             </>
-
           ) : (
-
             <>
-
               <button
                 className={
                   muted
@@ -120,9 +160,7 @@ function CallModal({
               >
                 <FiPhoneOff />
               </button>
-
             </>
-
           )}
 
         </div>
