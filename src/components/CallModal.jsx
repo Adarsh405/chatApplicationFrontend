@@ -15,10 +15,15 @@ function CallModal({
   onAccept,
   onReject,
 }) {
+  const avatar =
+    user?.avatar ||
+    `https://i.pravatar.cc/150?u=${user?.id}`;
+
   return (
     <div className="call-overlay">
       <div className="call-card">
 
+        {/* Call Status */}
         <div className="call-status">
           {incoming
             ? "Incoming voice call"
@@ -27,21 +32,25 @@ function CallModal({
             : "Calling..."}
         </div>
 
+        {/* Avatar */}
         <div className="call-avatar-wrapper">
           <img
-            src={
-              user?.avatar ||
-              `https://i.pravatar.cc/150?u=${user?.id}`
-            }
+            src={avatar}
             alt={user?.name || "User"}
             className="call-avatar"
+            onError={(e) => {
+              e.currentTarget.src =
+                "https://i.pravatar.cc/150";
+            }}
           />
         </div>
 
+        {/* User Name */}
         <h2>
           {user?.name || "Unknown"}
         </h2>
 
+        {/* Description */}
         <p>
           {incoming
             ? "Someone is calling you"
@@ -50,28 +59,33 @@ function CallModal({
             : "Calling..."}
         </p>
 
+        {/* Controls */}
         <div className="call-controls">
-
           {incoming ? (
             <>
+              {/* Accept */}
               <button
                 className="accept-call"
                 onClick={onAccept}
                 title="Accept call"
+                type="button"
               >
                 <FiPhone />
               </button>
 
+              {/* Reject */}
               <button
                 className="end-call"
                 onClick={onReject}
                 title="Reject call"
+                type="button"
               >
                 <FiPhoneOff />
               </button>
             </>
           ) : (
             <>
+              {/* Mute / Unmute */}
               <button
                 className={
                   muted
@@ -84,6 +98,7 @@ function CallModal({
                     ? "Unmute"
                     : "Mute"
                 }
+                type="button"
               >
                 {muted ? (
                   <FiMicOff />
@@ -92,16 +107,17 @@ function CallModal({
                 )}
               </button>
 
+              {/* End Call */}
               <button
                 className="end-call"
                 onClick={onClose}
                 title="End call"
+                type="button"
               >
                 <FiPhoneOff />
               </button>
             </>
           )}
-
         </div>
       </div>
     </div>

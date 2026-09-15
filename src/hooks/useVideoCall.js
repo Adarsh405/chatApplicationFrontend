@@ -14,7 +14,7 @@ const ICE_SERVERS = {
   ],
 };
 
-function useVoiceCall(
+function useVideoCall(
   currentUser,
   selectedUser
 ) {
@@ -27,13 +27,19 @@ function useVoiceCall(
   const [muted, setMuted] =
     useState(false);
 
+  const [camera, setCamera] =
+    useState(true);
+
   const peerConnection =
     useRef(null);
 
   const localStream =
     useRef(null);
 
-  const remoteAudio =
+  const remoteVideo =
+    useRef(null);
+
+  const localVideo =
     useRef(null);
 
   const pendingOffer =
@@ -42,19 +48,17 @@ function useVoiceCall(
   const pendingCandidates =
     useRef([]);
 
-  const activeRemoteUser =
-    useRef(null);
-
   const ringtone =
     useRef(null);
 
-  // ==================================================
+  // =====================================
   // RINGTONE
-  // ==================================================
+  // =====================================
 
   useEffect(() => {
-    ringtone.current =
-      new Audio("/sounds/ringtone.mp3");
+    ringtone.current = new Audio(
+      "/sounds/ringtone.mp3"
+    );
 
     ringtone.current.loop = true;
     ringtone.current.volume = 0.8;
@@ -63,7 +67,6 @@ function useVoiceCall(
       if (ringtone.current) {
         ringtone.current.pause();
         ringtone.current.currentTime = 0;
-        ringtone.current = null;
       }
     };
   }, []);
@@ -75,10 +78,9 @@ function useVoiceCall(
 
     ringtone.current
       .play()
-      .catch((error) => {
+      .catch(() => {
         console.log(
-          "Ringtone autoplay blocked:",
-          error
+          "Browser blocked ringtone autoplay"
         );
       });
   };
@@ -90,63 +92,55 @@ function useVoiceCall(
     ringtone.current.currentTime = 0;
   };
 
-  // ==================================================
+  // =====================================
   // CLEANUP
-  // ==================================================
+  // =====================================
 
   const cleanupCall = () => {
-    console.log(
-      "Cleaning up voice call..."
-    );
-
     stopRingtone();
 
-    // Stop microphone
     if (localStream.current) {
       localStream.current
         .getTracks()
         .forEach((track) => {
           track.stop();
-          track.enabled = false;
         });
 
       localStream.current = null;
     }
 
-    // Close WebRTC
     if (peerConnection.current) {
       peerConnection.current.ontrack = null;
       peerConnection.current.onicecandidate = null;
-      peerConnection.current.onconnectionstatechange = null;
-      peerConnection.current.oniceconnectionstatechange = null;
+      peerConnection.current.onconnectionstatechange =
+        null;
 
-      try {
-        peerConnection.current.close();
-      } catch (error) {
-        console.log(error);
-      }
-
+      peerConnection.current.close();
       peerConnection.current = null;
     }
 
-    // Clear audio
-    if (remoteAudio.current) {
-      remoteAudio.current.pause();
-      remoteAudio.current.srcObject = null;
+    if (remoteVideo.current) {
+      remoteVideo.current.pause();
+      remoteVideo.current.srcObject = null;
+    }
+
+    if (localVideo.current) {
+      localVideo.current.pause();
+      localVideo.current.srcObject = null;
     }
 
     pendingOffer.current = null;
     pendingCandidates.current = [];
-    activeRemoteUser.current = null;
 
     setIncomingCall(null);
     setCallState("idle");
     setMuted(false);
+    setCamera(true);
   };
 
-  // ==================================================
-  // FLUSH ICE
-  // ==================================================
+  // =====================================
+  // ICE QUEUE
+  // =====================================
 
   const flushPendingCandidates =
     async () => {
@@ -181,113 +175,94 @@ function useVoiceCall(
       }
     };
 
-  // ==================================================
+  // =====================================
   // CREATE PEER CONNECTION
-  // ==================================================
+  // =====================================
 
-  const createPeerConnection =
-    (remoteUserId) => {
-      const pc =
-        new RTCPeerConnection(
-          ICE_SERVERS
-        );
+  const createPeerConnection = (
+    receiverId
+  ) => {
+    const pc =
+      new RTCPeerConnection(
+        ICE_SERVERS
+      );
 
-      pc.ontrack = (event) => {
-        console.log(
-          "🎧 Remote voice track received"
-        );
+    // -------------------------------
+    // REMOTE VIDEO
+    // -------------------------------
 
-        const stream =
-          event.streams?.[0];
+    pc.ontrack = (event) => {
+      const stream =
+        event.streams?.[0];
 
-        if (!stream) return;
+      if (!stream) return;
 
-        if (!remoteAudio.current) {
-          console.error(
-            "Remote audio element missing"
-          );
-          return;
-        }
-
-        remoteAudio.current.srcObject =
+      if (remoteVideo.current) {
+        remoteVideo.current.srcObject =
           stream;
 
-        remoteAudio.current.muted = false;
-        remoteAudio.current.volume = 1;
-
-        remoteAudio.current
+        remoteVideo.current
           .play()
-          .then(() => {
-            console.log(
-              "🔊 Remote audio playing"
-            );
-          })
-          .catch((error) => {
-            console.error(
-              "Audio play error:",
-              error
-            );
-          });
-      };
-
-      pc.onicecandidate = (event) => {
-        if (!event.candidate) return;
-
-        socket.emit(
-          "webrtc_ice_candidate",
-          {
-            callerId:
-              currentUser?.id,
-            receiverId:
-              remoteUserId,
-            candidate:
-              event.candidate,
-            callType: "voice",
-          }
-        );
-      };
-
-      pc.onconnectionstatechange =
-        () => {
-          console.log(
-            "Voice connection:",
-            pc.connectionState
-          );
-
-          if (
-            pc.connectionState ===
-            "connected"
-          ) {
-            stopRingtone();
-            setCallState("connected");
-          }
-
-          if (
-            pc.connectionState ===
-              "failed" ||
-            pc.connectionState ===
-              "closed"
-          ) {
-            cleanupCall();
-          }
-        };
-
-      pc.oniceconnectionstatechange =
-        () => {
-          console.log(
-            "Voice ICE:",
-            pc.iceConnectionState
-          );
-        };
-
-      peerConnection.current = pc;
-
-      return pc;
+          .catch(() => {});
+      }
     };
 
-  // ==================================================
-  // SOCKET LISTENERS
-  // ==================================================
+    // -------------------------------
+    // ICE
+    // -------------------------------
+
+    pc.onicecandidate = (event) => {
+      if (!event.candidate) return;
+
+      socket.emit(
+        "webrtc_ice_candidate",
+        {
+          receiverId,
+          candidate:
+            event.candidate,
+          callType: "video",
+        }
+      );
+    };
+
+    // -------------------------------
+    // CONNECTION STATE
+    // -------------------------------
+
+    pc.onconnectionstatechange =
+      () => {
+        console.log(
+          "Video connection:",
+          pc.connectionState
+        );
+
+        if (
+          pc.connectionState ===
+          "connected"
+        ) {
+          setCallState("connected");
+        }
+
+        if (
+          pc.connectionState ===
+            "failed" ||
+          pc.connectionState ===
+            "disconnected" ||
+          pc.connectionState ===
+            "closed"
+        ) {
+          cleanupCall();
+        }
+      };
+
+    peerConnection.current = pc;
+
+    return pc;
+  };
+
+  // =====================================
+  // SOCKET EVENTS
+  // =====================================
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -297,70 +272,64 @@ function useVoiceCall(
       currentUser.id
     );
 
-    // ------------------------------
-    // Incoming call
-    // ------------------------------
+    // -------------------------------
+    // INCOMING CALL
+    // -------------------------------
 
-    const handleIncomingCall =
-      (data) => {
-        if (
-          data?.callType !== "voice"
-        ) {
-          return;
-        }
+    const handleIncomingCall = (
+      data
+    ) => {
+      console.log(
+        "VIDEO INCOMING CALL:",
+        data
+      );
 
-        console.log(
-          "📞 Incoming voice call:",
-          data
-        );
+      if (
+        data.callType !== "video"
+      ) {
+        return;
+      }
 
-        activeRemoteUser.current =
-          data.callerId;
+      setIncomingCall(data);
+      setCallState("incoming");
 
-        setIncomingCall(data);
-        setCallState("incoming");
+      startRingtone();
+    };
 
-        startRingtone();
-      };
+    // -------------------------------
+    // OFFER
+    // -------------------------------
 
-    // ------------------------------
-    // Offer
-    // ------------------------------
+    const handleOffer = (data) => {
+      if (
+        data.callType !== "video"
+      ) {
+        return;
+      }
 
-    const handleOffer =
-      (data) => {
-        if (
-          data?.callType !== "voice"
-        ) {
-          return;
-        }
+      console.log(
+        "VIDEO OFFER RECEIVED"
+      );
 
-        console.log(
-          "📨 Voice offer received"
-        );
+      pendingOffer.current =
+        data.offer;
+    };
 
-        pendingOffer.current =
-          data.offer;
-
-        if (data.callerId) {
-          activeRemoteUser.current =
-            data.callerId;
-        }
-      };
-
-    // ------------------------------
-    // Answer
-    // ------------------------------
+    // -------------------------------
+    // ANSWER
+    // -------------------------------
 
     const handleAnswer =
       async (data) => {
         if (
-          data?.callType !== "voice"
+          data.callType !== "video"
         ) {
           return;
         }
 
-        if (!peerConnection.current) {
+        if (
+          !peerConnection.current
+        ) {
           return;
         }
 
@@ -373,25 +342,23 @@ function useVoiceCall(
 
           await flushPendingCandidates();
 
-          stopRingtone();
-
           setCallState("connected");
         } catch (error) {
           console.error(
-            "Voice answer error:",
+            "VIDEO ANSWER ERROR:",
             error
           );
         }
       };
 
-    // ------------------------------
+    // -------------------------------
     // ICE
-    // ------------------------------
+    // -------------------------------
 
     const handleIceCandidate =
       async (data) => {
         if (
-          data?.callType !== "voice"
+          data.callType !== "video"
         ) {
           return;
         }
@@ -416,46 +383,27 @@ function useVoiceCall(
           );
         } catch (error) {
           console.error(
-            "Voice ICE error:",
+            "VIDEO ICE ERROR:",
             error
           );
         }
       };
 
-    // ------------------------------
-    // Call ended
-    // ------------------------------
+    // -------------------------------
+    // CALL ENDED
+    // -------------------------------
 
     const handleCallEnded =
       (data) => {
         if (
           data?.callType &&
-          data.callType !== "voice"
+          data.callType !== "video"
         ) {
           return;
         }
 
         console.log(
-          "📴 Voice call ended"
-        );
-
-        cleanupCall();
-      };
-
-    // ------------------------------
-    // Rejected
-    // ------------------------------
-
-    const handleCallRejected =
-      (data) => {
-        if (
-          data?.callType !== "voice"
-        ) {
-          return;
-        }
-
-        console.log(
-          "Voice call rejected"
+          "VIDEO CALL ENDED"
         );
 
         cleanupCall();
@@ -486,11 +434,6 @@ function useVoiceCall(
       handleCallEnded
     );
 
-    socket.on(
-      "call_rejected",
-      handleCallRejected
-    );
-
     return () => {
       socket.off(
         "incoming_call",
@@ -516,17 +459,12 @@ function useVoiceCall(
         "call_ended",
         handleCallEnded
       );
-
-      socket.off(
-        "call_rejected",
-        handleCallRejected
-      );
     };
   }, [currentUser?.id]);
 
-  // ==================================================
-  // START CALL
-  // ==================================================
+  // =====================================
+  // START VIDEO CALL
+  // =====================================
 
   const startCall = async () => {
     if (
@@ -537,19 +475,24 @@ function useVoiceCall(
     }
 
     try {
-      activeRemoteUser.current =
-        selectedUser.id;
-
       const stream =
         await navigator.mediaDevices.getUserMedia(
           {
             audio: true,
-            video: false,
+            video: true,
           }
         );
 
-      localStream.current =
-        stream;
+      localStream.current = stream;
+
+      if (localVideo.current) {
+        localVideo.current.srcObject =
+          stream;
+
+        localVideo.current
+          .play()
+          .catch(() => {});
+      }
 
       const pc =
         createPeerConnection(
@@ -572,85 +515,96 @@ function useVoiceCall(
         offer
       );
 
+      // Tell receiver
       socket.emit(
         "call_user",
         {
           callerId:
             currentUser.id,
+
           receiverId:
             selectedUser.id,
+
           callerName:
             currentUser.name,
-          callerAvatar:
-            currentUser.avatar || null,
-          callType: "voice",
+
+          callType: "video",
         }
       );
 
+      // Send WebRTC offer
       socket.emit(
         "webrtc_offer",
         {
-          callerId:
-            currentUser.id,
           receiverId:
             selectedUser.id,
+
           offer,
-          callType: "voice",
+
+          callType: "video",
         }
       );
 
       setCallState("calling");
-
-      // Caller clicked the button,
-      // so browser allows this sound.
-      startRingtone();
-
     } catch (error) {
       console.error(
-        "Start voice call error:",
+        "START VIDEO CALL ERROR:",
         error
       );
 
-      cleanupCall();
+      if (
+        error.name ===
+        "NotAllowedError"
+      ) {
+        alert(
+          "Camera and microphone permission are required."
+        );
+      } else {
+        alert(
+          "Unable to access camera or microphone."
+        );
+      }
 
-      alert(
-        "Please allow microphone permission to make a voice call."
-      );
+      cleanupCall();
     }
   };
 
-  // ==================================================
-  // ACCEPT CALL
-  // ==================================================
+  // =====================================
+  // ACCEPT VIDEO CALL
+  // =====================================
 
   const acceptCall = async () => {
-    if (!incomingCall) {
-      return;
-    }
+    if (!incomingCall) return;
 
     if (!pendingOffer.current) {
       console.error(
-        "Voice offer not received yet"
+        "WebRTC offer not received yet"
       );
+
       return;
     }
 
     try {
       stopRingtone();
 
-      activeRemoteUser.current =
-        incomingCall.callerId;
-
       const stream =
         await navigator.mediaDevices.getUserMedia(
           {
             audio: true,
-            video: false,
+            video: true,
           }
         );
 
-      localStream.current =
-        stream;
+      localStream.current = stream;
+
+      if (localVideo.current) {
+        localVideo.current.srcObject =
+          stream;
+
+        localVideo.current
+          .play()
+          .catch(() => {});
+      }
 
       const pc =
         createPeerConnection(
@@ -682,25 +636,14 @@ function useVoiceCall(
       );
 
       socket.emit(
-        "call_accepted",
-        {
-          callerId:
-            incomingCall.callerId,
-          receiverId:
-            currentUser.id,
-          callType: "voice",
-        }
-      );
-
-      socket.emit(
         "webrtc_answer",
         {
-          callerId:
-            currentUser.id,
           receiverId:
             incomingCall.callerId,
+
           answer,
-          callType: "voice",
+
+          callType: "video",
         }
       );
 
@@ -708,10 +651,9 @@ function useVoiceCall(
 
       setIncomingCall(null);
       setCallState("connected");
-
     } catch (error) {
       console.error(
-        "Accept voice call error:",
+        "ACCEPT VIDEO CALL ERROR:",
         error
       );
 
@@ -719,41 +661,31 @@ function useVoiceCall(
     }
   };
 
-  // ==================================================
-  // REJECT
-  // ==================================================
+  // =====================================
+  // REJECT VIDEO CALL
+  // =====================================
 
   const rejectCall = () => {
     if (!incomingCall) return;
 
-    socket.emit(
-      "call_rejected",
-      {
-        callerId:
-          incomingCall.callerId,
-        receiverId:
-          currentUser.id,
-        callType: "voice",
-      }
-    );
+    stopRingtone();
 
     socket.emit(
       "end_call",
       {
-        callerId:
-          currentUser.id,
         receiverId:
           incomingCall.callerId,
-        callType: "voice",
+
+        callType: "video",
       }
     );
 
     cleanupCall();
   };
 
-  // ==================================================
+  // =====================================
   // MUTE
-  // ==================================================
+  // =====================================
 
   const toggleMute = () => {
     if (!localStream.current) {
@@ -773,13 +705,34 @@ function useVoiceCall(
     );
   };
 
-  // ==================================================
+  // =====================================
+  // CAMERA
+  // =====================================
+
+  const toggleCamera = () => {
+    if (!localStream.current) {
+      return;
+    }
+
+    const tracks =
+      localStream.current.getVideoTracks();
+
+    tracks.forEach((track) => {
+      track.enabled =
+        !track.enabled;
+    });
+
+    setCamera(
+      (previous) => !previous
+    );
+  };
+
+  // =====================================
   // END CALL
-  // ==================================================
+  // =====================================
 
   const endCall = () => {
     const receiverId =
-      activeRemoteUser.current ||
       incomingCall?.callerId ||
       selectedUser?.id;
 
@@ -787,10 +740,8 @@ function useVoiceCall(
       socket.emit(
         "end_call",
         {
-          callerId:
-            currentUser?.id,
           receiverId,
-          callType: "voice",
+          callType: "video",
         }
       );
     }
@@ -798,21 +749,25 @@ function useVoiceCall(
     cleanupCall();
   };
 
-  // ==================================================
-  // RETURN
-  // ==================================================
-
   return {
     callState,
     incomingCall,
+
     muted,
-    remoteAudio,
+    camera,
+
+    remoteVideo,
+    localVideo,
+
     startCall,
     acceptCall,
     rejectCall,
+
     toggleMute,
+    toggleCamera,
+
     endCall,
   };
 }
 
-export default useVoiceCall;
+export default useVideoCall;
